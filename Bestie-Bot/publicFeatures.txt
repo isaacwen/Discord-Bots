@@ -1,0 +1,36 @@
+counting channel commands:
+`-leaderboard` shows the top 10 people who have counted the most
+`-myscore` shows the number of times you have counted
+`-competition` shows times/leaderboards for competitions
+
+pets-and-animals channel features: type a turtle emoji or any message with the word `turtle` in it to get a random(ish) response
+
+The bot also supports server-wide emote commands that allow you to use animated/custom emotes if you don't have nitro. The following commands are available:
+`--amongus
+--blobdance
+--bonk
+--coffinplz
+--coolpikachu
+--copium
+--elmofire
+--goose
+--hehe
+--hello
+--madge
+--monkaw
+--nodders
+--nopers
+--noted
+--peepohands
+--peepohappy
+--peepohey
+--peepoleave
+--pepecry
+--pepejam
+--pepepoint
+--poggersrow
+--prayge
+--sadge
+--turtle`
+
+If you find a bug or have a feature idea, message `WenWen (isaac, 2B CS)`. Note that this bot will not be online 24/7, it has to be manually enabled. If the bot is not online, none of the features will work - this is not a bug.
