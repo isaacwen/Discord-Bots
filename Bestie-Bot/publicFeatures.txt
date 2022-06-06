@@ -1,7 +1,12 @@
-counting channel commands:
+counting channel general commands:
 `-leaderboard` shows the top 10 people who have counted the most
 `-myscore` shows the number of times you have counted
 `-competition` shows times/leaderboards for competitions
+
+dibbing in counting channel:
+`-dib INTEGER` allows you to indicate a number that you want to dib. The integer has to be in the range `[0, 2147483647]`. You can only have one number dibbed at a time, and you cannot dib a number that has been dibbed by someone else already (first come first serve)
+`-undib` will undib any number that you have dibbed
+`-dibs` will show all of the dibbed numbers
 
 pets-and-animals channel features: type a turtle emoji or any message with the word `turtle` in it to get a random(ish) response
 
