@@ -19,6 +19,7 @@ mycursor = mydb.cursor()
 
 COUNT_TABLE_NAME =              os.getenv('COUNT_TABLE_NAME')
 COUNTING_UPDATE_TABLE_NAME =    os.getenv('COUNTING_UPDATE_TABLE_NAME')
+COUNTING_DIBS_TABLE_NAME =      os.getenv('COUNTING_DIBS_TABLE_NAME')
 TURTLE_FACTS_TABLE_NAME =       os.getenv('TURTLE_FACTS_TABLE_NAME')
 EMOTES_TABLE_NAME =             os.getenv('EMOTES_TABLE_NAME')
 COMP_COUNT_TABLE_NAME =         os.getenv('COMP_COUNT_TABLE_NAME')
@@ -29,14 +30,14 @@ COMP_END_TIME =                 datetime.fromisoformat(os.getenv('COMP_END_TIME'
 
 
 def initCountTable():
-    sql = "CREATE TABLE " + COUNT_TABLE_NAME + " (userid BIGINT PRIMARY KEY, count int);"
+    sql = f"CREATE TABLE {COUNT_TABLE_NAME} (userid BIGINT PRIMARY KEY, count int);"
     mycursor.execute(sql)
     mydb.commit()
 
 def initCountingUpdateTable():
-    sql = "CREATE TABLE " + COUNTING_UPDATE_TABLE_NAME + " (timeName varchar(255), timeValue DATETIME);"
+    sql = f"CREATE TABLE {COUNTING_UPDATE_TABLE_NAME} (timeName varchar(255), timeValue DATETIME);"
     mycursor.execute(sql)
-    sql = "INSERT INTO " + COUNTING_UPDATE_TABLE_NAME + " (timeName, timeValue) VALUES ('current', '2022-01-01 00:00:00');"
+    sql = f"INSERT INTO {COUNTING_UPDATE_TABLE_NAME} (timeName, timeValue) VALUES ('current', '2022-01-01 00:00:00');"
     mycursor.execute(sql)
     mydb.commit()
 
@@ -53,9 +54,9 @@ turtleFacts = [
 ]
 
 def initTurtleFactsTable():
-    sql = "CREATE TABLE " + TURTLE_FACTS_TABLE_NAME + " (id INT AUTO_INCREMENT PRIMARY KEY, fact varchar(1000));"
+    sql = f"CREATE TABLE {TURTLE_FACTS_TABLE_NAME} (id INT AUTO_INCREMENT PRIMARY KEY, fact varchar(1000));"
     mycursor.execute(sql)
-    sql = "INSERT INTO " + TURTLE_FACTS_TABLE_NAME + " (fact) VALUES (%s)"
+    sql = f"INSERT INTO {TURTLE_FACTS_TABLE_NAME} (fact) VALUES (%s)"
     mycursor.executemany(sql, turtleFacts)
     mydb.commit()
 
@@ -72,16 +73,16 @@ emotes = [
 ]
 
 def initEmotesTable():
-    sql = "CREATE TABLE " + EMOTES_TABLE_NAME + " (command varchar(255) PRIMARY KEY, link varchar(500));"
+    sql = f"CREATE TABLE {EMOTES_TABLE_NAME} (command varchar(255) PRIMARY KEY, link varchar(500));"
     mycursor.execute(sql)
-    sql = "INSERT INTO " + EMOTES_TABLE_NAME + " (command, link) VALUES (%s, %s)"
+    sql = f"INSERT INTO {EMOTES_TABLE_NAME} (command, link) VALUES (%s, %s)"
     mycursor.executemany(sql, emotes)
     mydb.commit()
 
 def initCompetitionTables():
-    sql = "CREATE TABLE " + COMP_COUNT_TABLE_NAME + " (userid BIGINT PRIMARY KEY, count INT);"
+    sql = f"CREATE TABLE {COMP_COUNT_TABLE_NAME} (userid BIGINT PRIMARY KEY, count INT);"
     mycursor.execute(sql)
-    sql = "CREATE TABLE " + COMP_DATES_TABLE_NAME + " (timeName varchar(20) PRIMARY KEY, timeValue DATETIME);"
+    sql = f"CREATE TABLE {COMP_DATES_TABLE_NAME} (timeName varchar(20) PRIMARY KEY, timeValue DATETIME);"
     mycursor.execute(sql)
     mydb.commit()
 
@@ -92,19 +93,25 @@ compDates = [
 ]
 
 def initCompetition():
-    sql = "REPLACE INTO " + COMP_DATES_TABLE_NAME + " (timeName, timeValue) VALUES (%s, %s);"
+    sql = f"REPLACE INTO {COMP_DATES_TABLE_NAME} (timeName, timeValue) VALUES (%s, %s);"
     mycursor.executemany(sql, compDates)
     mydb.commit()
 
 # Resets the table used to count in the competition
 def resetCompetitionCounts():
-    sql = "DELETE FROM " + COMP_COUNT_TABLE_NAME
+    sql = f"DELETE FROM {COMP_COUNT_TABLE_NAME}"
+    mycursor.execute(sql)
+    mydb.commit()
+
+def initCountingDibsTable():
+    sql = f"CREATE TABLE {COUNTING_DIBS_TABLE_NAME} (userid BIGINT PRIMARY KEY, number INT UNIQUE KEY);"
     mycursor.execute(sql)
     mydb.commit()
 
 initFunctions = [
     initCountTable,
     initCountingUpdateTable,
+    initCountingDibsTable,
     initTurtleFactsTable,
     initEmotesTable,
     initCompetitionTables,

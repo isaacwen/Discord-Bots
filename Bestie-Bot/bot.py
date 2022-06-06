@@ -21,6 +21,7 @@ YOUTUBE_LINK =                  os.getenv('YOUTUBE_LINK')
 
 COUNT_TABLE_NAME =              os.getenv('COUNT_TABLE_NAME')
 COUNTING_UPDATE_TABLE_NAME =    os.getenv('COUNTING_UPDATE_TABLE_NAME')
+COUNTING_DIBS_TABLE_NAME =      os.getenv('COUNTING_DIBS_TABLE_NAME')
 TURTLE_FACTS_TABLE_NAME =       os.getenv('TURTLE_FACTS_TABLE_NAME')
 EMOTES_TABLE_NAME =             os.getenv('EMOTES_TABLE_NAME')
 COMP_COUNT_TABLE_NAME =         os.getenv('COMP_COUNT_TABLE_NAME')
@@ -48,11 +49,13 @@ client = discord.Client(intents = intents)
 with open("publicFeatures.txt", "r") as file:
     features = file.read()
 
+MAXINT = 2147483647
+
 # Retrieves the time from a txt file, gets all messages from the counting
 # channel since that time, then adds all relevant messages to the DB.
 async def updateCountingDB():
     # Retrieve last update time recorded in DB
-    mycursor.execute("SELECT timeValue FROM " + COUNTING_UPDATE_TABLE_NAME + " WHERE timeName = 'current'")
+    mycursor.execute(f"SELECT timeValue FROM {COUNTING_UPDATE_TABLE_NAME} WHERE timeName = 'current'")
     lastTime = mycursor.fetchall()[0][0]
     
     # Update the time recorded in DB
@@ -65,7 +68,7 @@ async def updateCountingDB():
 # Updates the stored time in DB to right now (uses UTC+0 timezone)
 def updateDBTime():
     cur = datetime.utcnow()
-    sql = "UPDATE " + COUNTING_UPDATE_TABLE_NAME + " SET timeValue = '{}' WHERE timeName = 'current'".format(cur.strftime("%Y-%m-%d %H-%M-%S")) # YYYY-MM-DD HH-MM-SS
+    sql = "UPDATE {} SET timeValue = '{}' WHERE timeName = 'current'".format(COUNTING_UPDATE_TABLE_NAME, cur.strftime("%Y-%m-%d %H-%M-%S")) # YYYY-MM-DD HH-MM-SS
     mycursor.execute(sql)
     mydb.commit()
 
@@ -82,12 +85,12 @@ async def updateUserCount(msg):
         return False
     # Increment the user's count on the normal leaderboard
     userid = msg.author.id
-    sql = "INSERT INTO " + COUNT_TABLE_NAME + f" (userid, count) VALUES ({userid}, 1) ON DUPLICATE KEY UPDATE count = count + 1"
+    sql = f"INSERT INTO {COUNT_TABLE_NAME} (userid, count) VALUES ({userid}, 1) ON DUPLICATE KEY UPDATE count = count + 1"
     mycursor.execute(sql)
     # Increment the user's count on the competition leaderboard if applicable
     cur = datetime.now(tz = CUR_TIME_ZONE)
     if cur >= COMP_START_TIME and cur <= COMP_END_TIME and userid != prev_count_user:
-        sql = "INSERT INTO " + COMP_COUNT_TABLE_NAME + f" (userid, count) VALUES ({userid}, 1) ON DUPLICATE KEY UPDATE count = count + 1"
+        sql = f"INSERT INTO {COMP_COUNT_TABLE_NAME} (userid, count) VALUES ({userid}, 1) ON DUPLICATE KEY UPDATE count = count + 1"
         mycursor.execute(sql)
     mydb.commit()
     prev_count_user = userid
@@ -97,7 +100,7 @@ async def updateUserCount(msg):
 # counters in the given leaderboard (not including the header text for the
 # leaderboard)
 async def displayLeaderboard(tableName):
-    sql = "SELECT userid, count FROM " + tableName + " ORDER BY count DESC LIMIT " + LEADERBOARD_SIZE
+    sql = f"SELECT userid, count FROM {tableName} ORDER BY count DESC LIMIT {LEADERBOARD_SIZE}"
     mycursor.execute(sql)
     retVal = mycursor.fetchall()
     retString = ""
@@ -125,7 +128,7 @@ async def on_ready():
     global COMP_END_TIME
     global COMP_END_TIME_STRING
     global COMP_DATE_STRING
-    sql = "SELECT timeValue FROM " + COMP_DATES_TABLE_NAME + " ORDER BY timeName DESC;"
+    sql = f"SELECT timeValue FROM {COMP_DATES_TABLE_NAME} ORDER BY timeName DESC;"
     mycursor.execute(sql)
     retVal = mycursor.fetchall()
     # Set time zone to Waterloo local time
@@ -170,7 +173,7 @@ async def on_message(message):
                 await COUNTING_CHANNEL.send("__**BIGGEST CHADS**__" + await displayLeaderboard(COUNT_TABLE_NAME))
             elif message.content == "-myscore":
                 userid = message.author.id
-                sql = "SELECT count FROM " + COUNT_TABLE_NAME + f" WHERE userid = {userid}"
+                sql = f"SELECT count FROM {COUNT_TABLE_NAME} WHERE userid = {userid}"
                 mycursor.execute(sql)
                 retVal = mycursor.fetchall()
                 if retVal:
@@ -185,6 +188,36 @@ async def on_message(message):
                     await COUNTING_CHANNEL.send("__**COMPETITION IS UNDERWAY!**__\nCompetition will end at " + COMP_END_TIME_STRING + " ET. Current leaderboard:" + await displayLeaderboard(COMP_COUNT_TABLE_NAME))
                 else:
                     await COUNTING_CHANNEL.send("__**COMPETITION HAS ENDED!**__\nThank you for participating! The final leaderboard: " + await displayLeaderboard(COMP_COUNT_TABLE_NAME))
+            elif message.content == "-dibs":
+                sql = f"SELECT userid, number FROM {COUNTING_DIBS_TABLE_NAME} ORDER BY number ASC"
+                mycursor.execute(sql)
+                retVal = mycursor.fetchall()
+                if retVal:
+                    retString = "__**CURRENT DIBS**__"
+                    for userid, number in retVal:
+                        retString += "\n**" + str(number) + "** has been dibbed by " + (await client.fetch_user(userid)).display_name
+                    await COUNTING_CHANNEL.send(retString)
+                else:
+                    await COUNTING_CHANNEL.send("No one has dibbed any numbers yet!")
+            elif message.content.startswith("-dib"):
+                try:
+                    dibbedNum = (msg.split())[1]
+                    if int(dibbedNum) not in range(0, MAXINT + 1):
+                        raise ValueError
+                    sql = f"INSERT INTO {COUNTING_DIBS_TABLE_NAME} (userid, number) VALUES ({message.author.id}, {dibbedNum})"
+                    mycursor.execute(sql)
+                    mydb.commit()
+                    await COUNTING_CHANNEL.send(f"You have just dibbed {str(dibbedNum)}!")
+                # If there is no dibbed number provided or it is incorrect format
+                except (ValueError, IndexError):
+                    await COUNTING_CHANNEL.send("Incorrect usage of `-dib`. To dib a number, use `-dib INTEGER` with an integer in the range `[0, 2147483647]`.")
+                except (mysql.connector.errors.IntegrityError):
+                    await COUNTING_CHANNEL.send("You have already dibbed a number, or the number you attempted to dib has already been dibbed.")
+            elif message.content == "-undib":
+                sql = f"DELETE FROM {COUNTING_DIBS_TABLE_NAME} WHERE userid = {message.author.id}"
+                mycursor.execute(sql)
+                mydb.commit()
+                await COUNTING_CHANNEL.send("You have undibbed your number.")
     
     # pets channel
     if message.channel == PETS_CHANNEL and ("🐢" == msg or "turtle" in msg.replace(" ", "")):
@@ -196,7 +229,7 @@ async def on_message(message):
             await PETS_CHANNEL.send("I like turtles")
         elif rand == 2:
             rand2 = random.randint(1, 9)
-            sql = "SELECT fact FROM " + TURTLE_FACTS_TABLE_NAME + f" WHERE id = {rand2}"
+            sql = f"SELECT fact FROM {TURTLE_FACTS_TABLE_NAME} WHERE id = {rand2}"
             mycursor.execute(sql)
             await PETS_CHANNEL.send(mycursor.fetchall()[0][0])
         elif rand == 3:
@@ -206,7 +239,7 @@ async def on_message(message):
     
     # walmart discord nitro
     if msg.startswith('--'):
-        sql = "SELECT link FROM " + EMOTES_TABLE_NAME + f" WHERE command = '{msg}'"
+        sql = f"SELECT link FROM {EMOTES_TABLE_NAME} WHERE command = '{msg}'"
         mycursor.execute(sql)
         retVal = mycursor.fetchall()
         if retVal:
@@ -216,7 +249,7 @@ async def on_message(message):
         
 @client.event
 async def on_member_join(member):
-    await WELCOME_CHANNEL.send("Welcome to the server, " + member.display_name + "!")
+    await WELCOME_CHANNEL.send(f"Welcome to the server, {member.display_name}!")
     await WELCOME_CHANNEL.send("https://emoji.discord.st/emojis/f22c3899-10e6-4931-bddb-48998ce1da28.gif")
 
 client.run(TOKEN)
