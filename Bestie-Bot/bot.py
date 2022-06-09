@@ -16,6 +16,7 @@ COUNTING_CHANNEL_ID =           int(os.getenv('COUNTING_CHANNEL_ID'))
 PETS_CHANNEL_ID =               int(os.getenv('PETS_CHANNEL_ID'))
 WELCOME_CHANNEL_ID =            int(os.getenv('WELCOME_CHANNEL_ID'))
 TEST_SERVER_ID =                int(os.getenv('TEST_SERVER_ID'))
+COURSE_CHANNEL_ID =             int(os.getenv('COURSE_CHANNEL_ID'))
 TOKEN =                         os.getenv('TOKEN')
 YOUTUBE_LINK =                  os.getenv('YOUTUBE_LINK')
 
@@ -26,10 +27,15 @@ TURTLE_FACTS_TABLE_NAME =       os.getenv('TURTLE_FACTS_TABLE_NAME')
 EMOTES_TABLE_NAME =             os.getenv('EMOTES_TABLE_NAME')
 COMP_COUNT_TABLE_NAME =         os.getenv('COMP_COUNT_TABLE_NAME')
 COMP_DATES_TABLE_NAME =         os.getenv('COMP_DATES_TABLE_NAME')
+COURSES_TABLE_NAME =            os.getenv('COURSES_TABLE_NAME')
 # tzinfo object for the current timezone
 CUR_TIME_ZONE =                 pytz.timezone(os.getenv('CUR_TIME_ZONE'))
 
 LEADERBOARD_SIZE =              os.getenv('LEADERBOARD_SIZE')
+
+MAX_COURSES =                   os.getenv('MAX_COURSES')
+COURSE_TERM =                   os.getenv('COURSE_TERM')
+MAX_COURSE_NAME_LENGTH =        int(os.getenv('MAX_COURSE_NAME_LENGTH'))
 
 mydb = mysql.connector.connect(
     host =                      os.getenv('DB_HOSTNAME'),
@@ -118,9 +124,11 @@ async def on_ready():
     global COUNTING_CHANNEL
     global PETS_CHANNEL
     global WELCOME_CHANNEL
+    global COURSE_CHANNEL
     COUNTING_CHANNEL = client.get_channel(COUNTING_CHANNEL_ID)
     PETS_CHANNEL = client.get_channel(PETS_CHANNEL_ID)
     WELCOME_CHANNEL = client.get_channel(WELCOME_CHANNEL_ID)
+    COURSE_CHANNEL = client.get_channel(COURSE_CHANNEL_ID)
     print('We have logged in as {0.user}'.format(client))
 
     global COMP_START_TIME
@@ -246,6 +254,88 @@ async def on_message(message):
             await message.channel.send(retVal[0][0])
         else:
             await message.channel.send("https://imgur.com/jscoGrl")
+    
+    # courses feature
+    if message.channel == COURSE_CHANNEL:
+        if message.content.startswith("-addcourse"):
+            try:
+                messageArray = msg.split()
+                if len(messageArray) != 2:
+                    raise IndexError
+                course = (msg.split())[1].upper()
+                if len(course) > MAX_COURSE_NAME_LENGTH:
+                    raise ValueError
+                sql = f"INSERT INTO {COURSES_TABLE_NAME} VALUES ({message.author.id}, '{course}')"
+                mycursor.execute(sql)
+                mydb.commit()
+                await COURSE_CHANNEL.send(f"You have indicated that you are taking {course} in {COURSE_TERM}.")
+            except (IndexError):
+                await COURSE_CHANNEL.send(f"Incorrect usage of `-addcourse`. To indicate that you are going to be taking a certain course in {COURSE_TERM}, use `-addcourse COURSENAME`. There should be **no spaces** in the course name, for example ECON 101 should be instead written as ECON101.")
+            except (ValueError):
+                await COURSE_CHANNEL.send(f"What you entered is probably not a valid course name. To see what constitutes a valid course name, see the following guide: <{YOUTUBE_LINK}>")
+            except (mysql.connector.errors.DatabaseError):
+                await COURSE_CHANNEL.send(f"You already indicated you will be taking {MAX_COURSES} courses. If you are taking more than {MAX_COURSES} courses, good luck and my condolences. If you ever need study music, I recommend this livestream which has 24/7 music (I think 24/7 might be appropriate given your courseload): <{YOUTUBE_LINK}>")
+        elif message.content == "-mycourses":
+            sql = f"SELECT courseName FROM {COURSES_TABLE_NAME} WHERE userid = {message.author.id}"
+            mycursor.execute(sql)
+            retVal = mycursor.fetchall()
+            if retVal:
+                await COURSE_CHANNEL.send(f"You have indicated that you are taking the following courses in {COURSE_TERM}: " + ", ".join([tup[0] for tup in retVal]))
+            else:
+                await COURSE_CHANNEL.send(f"You have not indicated that you are taking any courses in {COURSE_TERM} yet.")
+        elif message.content.startswith("-delcourse"):
+            try:
+                messageArray = msg.split()
+                if len(messageArray) != 2:
+                    raise IndexError
+                course = (msg.split())[1].upper()
+                if len(course) > MAX_COURSE_NAME_LENGTH:
+                    raise ValueError
+                sql = f"DELETE FROM {COURSES_TABLE_NAME} WHERE userid = {message.author.id} AND courseName = '{course}';"
+                mycursor.execute(sql)
+                mydb.commit()
+                await COURSE_CHANNEL.send(f"You have removed {course} from your list of courses.")
+            except (IndexError):
+                await COURSE_CHANNEL.send(f"Incorrect usage of `-delcourse`. To delete a course from the list of course that you have indicated you will be taking, use `-delcourse COURSENAME`. There should be **no spaces** in the course name, for example ECON 101 should be instead written as ECON101.")
+            except (ValueError):
+                await COURSE_CHANNEL.send(f"What you entered is probably not a valid course name. To see what constitutes a valid course name, see the following guide: <{YOUTUBE_LINK}>")
+        elif message.content.startswith("-whoistaking"):
+            try:
+                messageArray = msg.split()
+                if len(messageArray) != 2:
+                    raise IndexError
+                course = (msg.split())[1].upper()
+                if len(course) > MAX_COURSE_NAME_LENGTH:
+                    raise ValueError
+                sql = f"SELECT DISTINCT userid FROM {COURSES_TABLE_NAME} WHERE courseName = '{course}'"
+                mycursor.execute(sql)
+                retVal = mycursor.fetchall()
+                if retVal:
+                    await COURSE_CHANNEL.send(f"The following people have indicated they are taking {course} in {COURSE_TERM}: " + ", ".join([(await client.fetch_user(int(tup[0]))).display_name for tup in retVal]))
+                else:
+                    await COURSE_CHANNEL.send(f"No one has indicated that they are taking {course} in {COURSE_TERM} yet.")
+            except (IndexError):
+                await COURSE_CHANNEL.send(f"Incorrect usage of `-whoistaking`. To see who has indicated they are taking a particular course, use `-whoistaking COURSENAME`. There should be **no spaces** in the course name, for example ECON 101 should be instead written as ECON101.")
+            except (ValueError):
+                await COURSE_CHANNEL.send(f"What you entered is probably not a valid course name. To see what constitutes a valid course name, see the following guide: <{YOUTUBE_LINK}>")
+        elif message.content == "-allcourses" and message.author.id == ADMIN_ID:
+            sql = f"SELECT userid, courseName FROM {COURSES_TABLE_NAME} GROUP BY userid, courseName;"
+            mycursor.execute(sql)
+            retVal = mycursor.fetchall()
+            if retVal:
+                courseDict = {}
+                for userid, courseName in retVal:
+                    if userid in courseDict:
+                        courseDict[userid].append(courseName)
+                    else:
+                        courseDict[userid] = [courseName]
+                retString = f"**People have indicated that they are taking the following courses in {COURSE_TERM}**"
+                for user, courses in courseDict.items():
+                    retString += f"\n{(await client.fetch_user(user)).display_name} is taking " + ", ".join(courses)
+                await COURSE_CHANNEL.send(retString)
+            else:
+                await COURSE_CHANNEL.send(f"No one has indicated they are taking any courses in {COURSE_TERM} yet.")
+
         
 @client.event
 async def on_member_join(member):

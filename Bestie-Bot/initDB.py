@@ -24,9 +24,14 @@ TURTLE_FACTS_TABLE_NAME =       os.getenv('TURTLE_FACTS_TABLE_NAME')
 EMOTES_TABLE_NAME =             os.getenv('EMOTES_TABLE_NAME')
 COMP_COUNT_TABLE_NAME =         os.getenv('COMP_COUNT_TABLE_NAME')
 COMP_DATES_TABLE_NAME =         os.getenv('COMP_DATES_TABLE_NAME')
+COURSES_TABLE_NAME =            os.getenv('COURSES_TABLE_NAME')
 
 COMP_START_TIME =               datetime.fromisoformat(os.getenv('COMP_START_TIME'))
 COMP_END_TIME =                 datetime.fromisoformat(os.getenv('COMP_END_TIME'))
+
+MAX_COURSES =                   os.getenv('MAX_COURSES')
+MAX_COURSE_NAME_LENGTH =        int(os.getenv('MAX_COURSE_NAME_LENGTH'))
+MAX_COURSES_ERROR_CODE =        os.getenv('MAX_COURSES_ERROR_CODE')
 
 
 def initCountTable():
@@ -108,6 +113,13 @@ def initCountingDibsTable():
     mycursor.execute(sql)
     mydb.commit()
 
+def initCoursesTable():
+    sql = f"CREATE TABLE {COURSES_TABLE_NAME} (userid BIGINT, courseName varchar({MAX_COURSE_NAME_LENGTH}));"
+    mycursor.execute(sql)
+    sql = f"CREATE TRIGGER {COURSES_TABLE_NAME} BEFORE INSERT ON {COURSES_TABLE_NAME} FOR EACH ROW BEGIN IF (SELECT count(*) FROM {COURSES_TABLE_NAME} WHERE {COURSES_TABLE_NAME}.userid = NEW.userid) >= {MAX_COURSES} THEN SIGNAL SQLSTATE '{MAX_COURSES_ERROR_CODE}' SET MESSAGE_TEXT = 'Each user can only be in a limited number of courses'; END IF; END;"
+    mycursor.execute(sql)
+    mydb.commit()
+
 initFunctions = [
     initCountTable,
     initCountingUpdateTable,
@@ -115,7 +127,8 @@ initFunctions = [
     initTurtleFactsTable,
     initEmotesTable,
     initCompetitionTables,
-    initCompetition
+    initCompetition,
+    initCoursesTable
 ]
 
 if __name__ == "__main__":
