@@ -10,39 +10,14 @@ dibbing in counting channel:
 
 pets-and-animals channel features: type a turtle emoji or any message with the word `turtle` in it to get a random(ish) response
 
-school channel feature: you can enter the courses that you are taking (or plan on taking) for the following term and from this database of courses that people have indicated they are taking you can search for who is taking what courses. The following commands are available for this feature:
-`-addcourse COURSENAME` allows you to add a course to the list of courses that you are taking in the following term. There should be **no spaces** in the course name, for example ECON 101 should be instead written as ECON101. There is also a hard cap of 10 courses that each person can indicate that they are taking in a term. If you plan on taking more than 10, first of all, good luck, and also if you would like I can increase the cap
-`-delcourse COURSENAME` allows you to delete a course from your list of courses. Again, there should be **no spaces** in the course name
-`-whoistaking COURSENAME` allows you to search for who is taking a particular course. Again, there should be **no spaces** in the course name
+school channel feature: you can enter the courses that you are taking (or plan on taking) for the following term and from this database of courses that people have indicated they are taking you can search for who is taking what courses. The following commands are available for this feature (note that for each relevant feature, there should be **no spaces** in the course name, for example, ECON 101 should be instead written as ECON101):
+`-addcourse COURSENAME` allows you to add a course to the list of courses that you are taking in the following term.
+`-delcourse COURSENAME` allows you to delete a course from your list of courses.
+`-whoistaking COURSENAME` allows you to search for who is taking a particular course.
+`-sharedwithme` allows you to search for if anyone shares any courses with you.
 `-mycourses` allows you to see what courses you have indicated that you are currently taking
-`-allcourses` will show the list of all courses that everyone is taking (that has added courses to this feature). Since this particular command can get very expensive to run, for now it is only able to be run by `WenWen (isaac, 2B CS)`. If you would like to see the results of this command, message or @ `WenWen (isaac, 2B CS)`
+`-allcourses` will show the list of all courses that everyone is taking. This command is only able to be run by `WenWen (isaac, 2B CS)`. If you would like to see the results of this command, message or @ `WenWen (isaac, 2B CS)`
 
-The bot also supports server-wide emote commands that allow you to use animated/custom emotes if you don't have nitro. The following commands are available:
-`--amongus
---blobdance
---bonk
---coffinplz
---coolpikachu
---copium
---elmofire
---goose
---hehe
---hello
---madge
---monkaw
---nodders
---nopers
---noted
---peepohands
---peepohappy
---peepohey
---peepoleave
---pepecry
---pepejam
---pepepoint
---poggersrow
---prayge
---sadge
---turtle`
+The bot also supports server-wide emote commands that allow you to use animated/custom emotes if you don't have nitro. To see a full list of these, message `WenWen (isaac, 2B CS)`.
 
 If you find a bug or have a feature idea, message `WenWen (isaac, 2B CS)`. Note that this bot will not be online 24/7, it has to be manually enabled. If the bot is not online, none of the features will work - this is not a bug.

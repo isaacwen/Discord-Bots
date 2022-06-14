@@ -166,7 +166,9 @@ async def on_message(message):
     if not message.guild:    
         try:
             if msg == "-features":
-                await message.channel.send(features)
+                # message length is capped at 2000 characters
+                await message.channel.send(features[:2000])
+                await message.channel.send(features[2000:])
             elif msg == "-shutdown" and message.author.id == ADMIN_ID:
                 await message.channel.send("Shutting down")
                 await client.close()
@@ -335,6 +337,23 @@ async def on_message(message):
                 await COURSE_CHANNEL.send(retString)
             else:
                 await COURSE_CHANNEL.send(f"No one has indicated they are taking any courses in {COURSE_TERM} yet.")
+        elif message.content == "-sharedwithme":
+            sql = f"SELECT userid, courseName FROM {COURSES_TABLE_NAME} WHERE courseName IN (SELECT courseName FROM {COURSES_TABLE_NAME} WHERE userid = {message.author.id}) AND userid <> {message.author.id};"
+            mycursor.execute(sql)
+            retVal = mycursor.fetchall()
+            if retVal:
+                sharedDict = {}
+                for userid, courseName in retVal:
+                    if userid in sharedDict:
+                        sharedDict[userid] += ", " + courseName
+                    else:
+                        sharedDict[userid] = courseName
+                retString = f"In {COURSE_TERM}, you share the following courses with"
+                for user, courses in sharedDict.items():
+                    retString += f"\n**{(await client.fetch_user(user)).display_name}**: {courses}"
+                await COURSE_CHANNEL.send(retString)
+            else:
+                await COURSE_CHANNEL.send(f"You are not currently sharing courses in {COURSE_TERM} with anyone in this server.")
 
         
 @client.event
