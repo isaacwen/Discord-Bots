@@ -1,0 +1,13 @@
+This is classic Uno, with some common modifications.
+
++2 and +4 cards can be stacked (note that they are called `drawTwo` and `drawFour`, respectively).
+
+When a player draws cards outside the effects of +2 and +4 cards, that player will draw until they draw a card that they can play. In this game, you are forced to play the first playable card you draw.
+
+The most important implementation detail is how calling 'Uno!' will be addressed.
+    - After a player confirms playing a card that would bring them to one card remaining in their hand, a "safeguard" is enabled until the next person in the turn order confirms their move. When the "safeguard" is enabled, no one will be penalized for calling 'Uno!'. If the "safeguard" is not enabled and a player calls 'Uno!' without there being a player with one card who is not safe, that player will be penalized.
+    - A player who has one card remaining in their hand must call 'Uno!' before all other players to be safe, or else they will be penalized.
+    - When a player calls 'Uno!' they will either become safe if they are currently unsafe and have one card OR they will be calling 'Uno!' on every other player (in that order of priority). A player must call 'Uno!' twice to have both effects.
+    - A player remains safe until they win, or an action would cause them to draw cards.
+
+Finally, games continue only until one person has run out of cards. There is no second, third, etc. placements.
