@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from discord.ui import Button, View
 from typing import Callable, Coroutine
-from threading import Lock
+from asyncio import Lock
 import discord
 import os
 
@@ -136,7 +136,7 @@ class ConfirmationButtons:
             custom_id = "confirmButton"
         )
 
-        self.confirmationView = View()
+        self.confirmationView = View(timeout = None)
         self.confirmationView.add_item(self.rejectButton)
         self.confirmationView.add_item(self.confirmButton)
 
@@ -233,7 +233,7 @@ class DiscordBotIO(IO):
         drawButton = Button(label = "Draw card(s)", style = defStyle, custom_id = "drawButton")
         quitButton = Button(label = "Quit game", style = defStyle, custom_id = "quitButton")
 
-        playerInputView = View()
+        playerInputView = View(timeout = None)
         playerInputView.add_item(playButton)
         playerInputView.add_item(drawButton)
         playerInputView.add_item(quitButton)
@@ -537,7 +537,7 @@ class DiscordBotIO(IO):
         greenButton = Button(label = "Green", style = defStyle, custom_id = "greenButton")
         yellowButton = Button(label = "Yellow", style = defStyle, custom_id = "yellowButton")
 
-        chooseColorView = View()
+        chooseColorView = View(timeout = None)
         chooseColorView.add_item(redButton)
         chooseColorView.add_item(blueButton)
         chooseColorView.add_item(greenButton)
@@ -742,7 +742,7 @@ async def self(interaction: discord.Interaction):
     if await usedInAcceptedChannel(interaction, UNO_CHANNEL_ID, UNO_CHANNEL_NAME):
         player: int = interaction.user.id
         if currentGame:
-            currentGame.acquirePlayerLock(f"Viewing player {player}'s hand.")
+            await currentGame.acquirePlayerLock(f"Viewing player {player}'s hand.")
             try:
                 s: str = "   "
                 hand: list[Card] = currentGame.getPlayerHand(player)
@@ -768,7 +768,7 @@ async def self(interaction: discord.Interaction):
     global currentGame
     if await usedInAcceptedChannel(interaction, UNO_CHANNEL_ID, UNO_CHANNEL_NAME):
         if currentGame:
-            currentGame.acquirePlayerLock("Viewing cards in each player's hands.")
+            await currentGame.acquirePlayerLock("Viewing cards in each player's hands.")
             players: str = ""
             numCards: str = ""
             for player in currentGame.players:
@@ -804,7 +804,7 @@ async def self(interaction: discord.Interaction):
     global playerQueue
     if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
         if not currentGame:
-            playerQueueLock.acquire()
+            await playerQueueLock.acquire()
             if len(playerQueue) < MIN_PLAYERS:
                 errorMessage = f"Unable to start game. {len(playerQueue)} out of a "
                 errorMessage += f"minimum of {MIN_PLAYERS} players are in queue."
@@ -856,12 +856,12 @@ async def self(interaction: discord.Interaction):
     global currentGame
     global playerQueue
     if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
-        with playerQueueLock:
+        async with playerQueueLock:
             player = interaction.user.id
 
             # Check that the user isn't in the current game.
             if currentGame:
-                currentGame.acquirePlayerLock(f"Checking if player {player} is in the current game.")
+                await currentGame.acquirePlayerLock(f"Checking if player {player} is in the current game.")
                 if player in currentGame.playerNames:
                     await interaction.response.send_message(
                         embed = getDefaultErrorEmbed("You are already in the active game.")
@@ -890,7 +890,7 @@ async def self(interaction: discord.Interaction):
 async def self(interaction: discord.Interaction):
     global playerQueue
     if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
-        with playerQueueLock:
+        async with playerQueueLock:
             player = interaction.user.id
             if player in playerQueue:
                 playerQueue.remove(player)
@@ -907,7 +907,7 @@ async def self(interaction: discord.Interaction):
 async def self(interaction: discord.Interaction):
     global playerQueue
     if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
-        with playerQueueLock:
+        async with playerQueueLock:
             players: str = ""
             for player in playerQueue:
                 p = await client.fetch_user(player)
@@ -934,7 +934,7 @@ async def self(interaction: discord.Interaction):
             curPlayerId = interaction.user.id
             curPlayer = await client.fetch_user(curPlayerId)
             curPlayerDisplayName = curPlayer.display_name
-            response, playerNames = currentGame.playerCallUno(curPlayerId)
+            response, playerNames = await currentGame.playerCallUno(curPlayerId)
             embedResponse: discord.Embed
             if response == 0:
                 await interaction.response.send_message(

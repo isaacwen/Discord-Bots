@@ -1,5 +1,5 @@
 from enum import Enum
-from threading import Lock
+from asyncio import Lock
 import random
 import traceback
 import logging
@@ -401,26 +401,24 @@ class UnoGame:
         """
         :returns: String corresponds to the game state (all cards in each location)."""
         s = f"Game state:\n\nDeck:\n{str(self.deck)}\n\nDiscard:\n{str(self.discard)}\n\nPlayers:\n"
-        self.acquirePlayerLock("Converting UnoGame to string.")
         for player in self.players:
             s += str(player) + "\n"
-        self.releasePlayerLock("Finished converting UnoGame to string.")
         return s
 
     def initDiscard(self):
         """Initializes discard pile with a non-action card from the deck."""
         self.discard.addTop(self.deck.popNonAction())
 
-    def acquireUnoSafeguardLock(self, logMessage: str):
-        self.unoSafeguardLock.acquire()
+    async def acquireUnoSafeguardLock(self, logMessage: str):
+        await self.unoSafeguardLock.acquire()
         self.rootLogger.info(f"unoSafeguardLock acquired: {logMessage}")
 
     def releaseUnoSafeguardLock(self, logMessage: str):
         self.unoSafeguardLock.release()
         self.rootLogger.info(f"unoSafeguardLock released: {logMessage}")
 
-    def acquirePlayerLock(self, logMessage: str):
-        self.playerLock.acquire()
+    async def acquirePlayerLock(self, logMessage: str):
+        await self.playerLock.acquire()
         self.rootLogger.info(f"playerLock acquired: {logMessage}")
 
     def releasePlayerLock(self, logMessage: str):
@@ -464,7 +462,7 @@ class UnoGame:
         # If the top card is a skip and has not been executed, skip this
         # player's turn
         if (not self.numDraw) and self.skipNextPlayer:
-            self.updateNextPlayer()
+            await self.updateNextPlayer()
             self.skipNextPlayer = False
             return False
 
@@ -478,8 +476,8 @@ class UnoGame:
         while not validMoveMade:
             try:
                 pm, n = await self.ioManager.getPlayerInput(curPlayer, self.discard.topCard, self.numDraw)
-                self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed a move.")
-                self.acquireUnoSafeguardLock(f"Player {curPlayer.name} has confirmed a move.")
+                await self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed a move.")
+                await self.acquireUnoSafeguardLock(f"Player {curPlayer.name} has confirmed a move.")
                 if pm is PlayerMove.playCard:
                     playedCard: Card = curPlayer.seeCard(n)
                     if not self.discard.topCard.matches(playedCard, topDrawAndActive):
@@ -587,14 +585,14 @@ class UnoGame:
                 return True
 
         # Update to the next player
-        self.updateNextPlayer(playerQuit)
+        await self.updateNextPlayer(playerQuit)
         return False
 
-    def updateNextPlayer(self, playerQuit: bool = False):
+    async def updateNextPlayer(self, playerQuit: bool = False):
         """Updates nextPlayer to the next player in the turn order.
 
         Locks: checks playerLock"""
-        self.acquirePlayerLock("Updating nextPlayer.")
+        await self.acquirePlayerLock("Updating nextPlayer.")
         # If the current player has quit and the turn order is positive, then
         # shouldn't update nextPlayer.
         if not (playerQuit and self.turnOrder == 1):
@@ -629,7 +627,7 @@ class UnoGame:
             only has one card."""
         player.add(self.deck.pop(self.discard))
 
-    def playerCallUno(self, playerName: int) -> (int, list[int]):
+    async def playerCallUno(self, playerName: int) -> (int, list[int]):
         """Manages all actions if the given player calls Uno. Returns values
         instead of directly sending to output because certain values need
         processing in discord (e.g. player display names, ephemerals).
@@ -645,8 +643,8 @@ class UnoGame:
                 without safeguard up, and there are 0 players not safe.
             (4, x), x != None if player playerName has called Uno not for
                 themselves and x are the names of players that are not safe."""
-        self.acquirePlayerLock(f"Executing player {playerName} calling 'Uno!'.")
-        self.acquireUnoSafeguardLock(f"Executing player {playerName} calling 'Uno!'.")
+        await self.acquirePlayerLock(f"Executing player {playerName} calling 'Uno!'.")
+        await self.acquireUnoSafeguardLock(f"Executing player {playerName} calling 'Uno!'.")
 
         unsafePlayersWithOneCard = []
         unsafePlayerNamesWithOneCard = []
