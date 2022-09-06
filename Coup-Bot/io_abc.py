@@ -30,9 +30,62 @@ class IO(ABC):
     async def getPlayerInput(self, player):
         """Input for what a player wants to do on a turn.
 
-        HANDLES INVALID INPUT BY DEFAULT.
+        HANDLES INVALID INPUT BY DEFAULT."""
+        pass
 
-        :raises UnoError: On invalid input"""
+    @abstractmethod
+    async def getChallenges(self, curPlayer) -> int:
+        """Asks players if anyone would like to challenge and, if so, returns
+        the name of the player who challenged.
+
+        :param curPlayer: The player whose move who is being challenged (they
+            cannot initiate a challenge on themselves).
+        :returns: Name of the player who challenges, or -1 otherwise."""
+        pass
+
+    @abstractmethod
+    async def getPlayerTargetChoice(self, player, playerList: list[int]) -> int:
+        """Input for which other player one wants to target with their move"""
+        pass
+
+    @abstractmethod
+    async def getPlayerCardChoice(self, playerName: int, isReveal: bool = True) -> int:
+        """Asks a player which of their cards they would like to reveal/discard.
+        Should return 0 automatically if player only has one card.
+
+        :param playerName: Name of the player who is being asked.
+        :param isReveal: True if action is reveal, False if action is discard.
+        :returns: 0 or 1, corresponding to the index of the card in the hand
+            that the player would like to discard."""
+        pass
+
+    @abstractmethod
+    async def askPlayerContessa(self, playerName: int) -> bool:
+        """Asks a player if they would like to claim Contessa when they are
+        being assassinated.
+
+        :returns: True if player claims Contessa, False otherwise."""
+        pass
+
+    @abstractmethod
+    async def askPlayersRoles(self, characterList):
+        """Asks if there are any players that would like to claim to be any of
+        the characters in the character list. Used for
+            - asking if there are any Dukes when someone takes foreign aid
+            - asking if there are any Ambassadors/Captains when someone steals
+
+        :returns: Name of the player that claims a role and the role that they
+            claim, otherwise (-1, None)."""
+        pass
+
+    @abstractmethod
+    async def playerAssassinated(self, assassinName: int, assassineeName: int):
+        """Output for when a player has been assassinated."""
+        pass
+
+    @abstractmethod
+    async def playerEliminated(self, playerName: int):
+        """Output for when a player is eliminated."""
         pass
 
     @abstractmethod
