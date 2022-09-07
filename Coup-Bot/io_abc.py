@@ -30,11 +30,12 @@ class IO(ABC):
     async def getPlayerInput(self, player):
         """Input for what a player wants to do on a turn.
 
-        HANDLES INVALID INPUT BY DEFAULT."""
+        HANDLES INVALID INPUT BY DEFAULT. This includes inputs requiring coins
+        and the player does not have enough coins."""
         pass
 
     @abstractmethod
-    async def getChallenges(self, curPlayer) -> int:
+    async def getChallenges(self, curPlayer: int) -> int:
         """Asks players if anyone would like to challenge and, if so, returns
         the name of the player who challenged.
 
