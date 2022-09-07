@@ -1,7 +1,6 @@
 from enum import Enum
 from asyncio import Lock, get_event_loop
 import random
-import traceback
 import logging
 
 from io_abc import IO
@@ -137,7 +136,6 @@ class Deck(CardList):
         random.shuffle(self.cardList)
 
 
-
 class Player:
     def __init__(self, name: int, startingHand: list[Card]):
         self.name: int = name
@@ -160,13 +158,14 @@ class Player:
     def addCoins(self, n: int):
         self.coins += n
 
-    def removeCoins(self, n: int):
-        """Removes n coins from player.
+    def subCoins(self, n: int) -> int:
+        """Removes n coins from player. If the player does not have n coins,
+        removes all coins from the player.
 
-        :raises CoupError: If there are not enough coins."""
-        if n > self.coins:
-            raise CoupError(f"Player {self.name} does not have {n} coins ({self.coins} coins only). ")
-        self.coins -= n
+        :returns: Number of coins that have been removed."""
+        oldBalance: int = self.coins
+        self.coins = max(self.coins - n, 0)
+        return oldBalance - self.coins
 
     def peek(self, n: int) -> Card:
         """Returns, but does not discrad, nth card from hand.
@@ -195,7 +194,6 @@ class Player:
     def leave(self, discard: CardList):
         discard.addCards(self.hand)
 
-    # TODO: remove method after testing
     def setHand(self, characters: list[Character]):
         """Sets the player's hand to have the given characters. Used for
         testing."""
@@ -231,7 +229,7 @@ class TextBasedIO(IO):
         await self.displayMessage(s)
         return PlayerMove(int(await self.getInput(player)) - 1)
 
-    async def getChallenges(self, curPlayer: Player) -> int:
+    async def getChallenges(self, curPlayer: int) -> int:
         return int(input("Enter name of player who would like to challenge (-1 otherwise): "))
 
     async def getPlayerTargetChoice(self, player: Player, playerList: list[int]) -> int:
@@ -247,6 +245,15 @@ class TextBasedIO(IO):
 
     async def askPlayerContessa(self, playerName: int) -> bool:
         return bool(int(input(f"{playerName} would you like to claim contessa (0 or 1): ")))
+
+    async def askPlayersRoles(self, characterList: list[Character]) -> (int, Character):
+        s = f"Would any player like to claim any of the following roles:\n"
+        for character in characterList:
+            s += f"{character.name}\n"
+        claimPlayer: int = int(input(s))
+        if claimPlayer == -1:
+            return -1, None
+        return claimPlayer, int(input("Which character would you like to claim (enter index)?"))
 
     async def playerAssassinated(self, assassinName: int, assassineeName: int):
         print(f"{assassineeName} has been assassinated by {assassinName}.")
@@ -335,16 +342,57 @@ class CoupGame:
             curPlayer.addCoins(1)
             self.releasePlayerLock("Player has finished taking income.")
         elif pm is PlayerMove.Foreign_Aid:
-            await self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed move {pm.name}.")
-            curPlayer.addCoins(2)
-            self.releasePlayerLock("Player has chosen to take foreign aid.")
-        elif pm is PlayerMove.Quit:
-            await self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed move {pm.name}.")
-            curPlayer.leave(self.discard)
-            del self.players[0]
-            playerLeft = True
+            # # Players can continue claiming Duke until no one claims it or until
+            # # one person successfully claims it
+            # claimPlayerName: int
+            # while True:
+            #     claimPlayerName, _ = await self.ioManager.askPlayersRoles([Character.Duke])
+            #     if claimPlayerName != -1:
+            #         claimPlayer = self.getPlayerByName(claimPlayerName)
+            #         retVal = await self.resolveChallenges(claimPlayer, Character.Duke)
+            #         if retVal == -2:
+            #             return True
+            #         # Player unsuccessfully claims Duke
+            #         elif retVal == claimPlayerName:
+            #             continue
+            #         # Player successfully claims Duke
+            #         elif retVal == curPlayer.name:
+            #             if not curPlayer.handSize():
+            #                 playerLeft = True
+            #         # Otherwise, also player has successfully claimed Duke
+            #     # If claimPlayerName == -1, no one claims Duke
+            #     break
 
-            self.releasePlayerLock("Player has successfully quit the game.")
+            claimPlayerName = await self.playerBlock([Character.Duke])
+            # Check whether curPlayer has run out of cards
+            if not curPlayer.handSize():
+                playerLeft = True
+
+            # Iff claimPlayerName == -1, no one successfully claimed Duke
+            if claimPlayerName == -1:
+                await self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed move {pm.name}.")
+                curPlayer.addCoins(2)
+                self.releasePlayerLock("Player has chosen to take foreign aid.")
+        elif pm is PlayerMove.Coup:
+            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.playerNames)
+            await self.acquirePlayerLock(f"Player {curPlayer.name} paying 7 coins to coup {targetPlayerName}.")
+            curPlayer.subCoins(7)
+            self.releasePlayerLock(f"Player {curPlayer.name} finished paying 7 coins to coup {targetPlayerName}.")
+            discardedCardIdx = await self.ioManager.getPlayerCardChoice(targetPlayerName, False)
+            retVal = await self.playerDiscardCard(targetPlayerName, discardedCardIdx)
+            if retVal == 2:
+                return True
+        elif pm is PlayerMove.Tax:
+            retVal = await self.resolveChallenges(curPlayer, Character.Duke)
+            if retVal == -2:
+                return True
+            elif retVal == curPlayer.name:
+                if not curPlayer.handSize():
+                    playerLeft = True
+            else:
+                await self.acquirePlayerLock(f"Player {curPlayer.name} getting 3 coins from Tax.")
+                curPlayer.addCoins(3)
+                self.releasePlayerLock(f"Player {curPlayer.name} finished getting 3 coins from Tax.")
         elif pm is PlayerMove.Assassinate:
             targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.playerNames)
             targetPlayer: Player = self.getPlayerByName(targetPlayerName)
@@ -387,7 +435,7 @@ class CoupGame:
 
                 if loseCoins:
                     await self.acquirePlayerLock(f"Removing coins from Player {curPlayer.name} for assassination.")
-                    curPlayer.removeCoins(3)
+                    curPlayer.subCoins(3)
                     self.releasePlayerLock(f"Finished removing coins from Player {curPlayer.name} for assassination.")
 
                 if continueAssassinate:
@@ -395,10 +443,58 @@ class CoupGame:
                     retVal3 = await self.playerDiscardCard(targetPlayerName, discardedCardIdx)
                     if retVal3 == 2:
                         return True
+        elif pm is PlayerMove.Steal:
+            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer)
+            targetPlayer: Player = self.getPlayerByName(targetPlayerName)
+            retVal = await self.resolveChallenges(curPlayer, Character.Captain)
+            if retVal == -2:
+                return True
+            elif retVal == curPlayer.name:
+                if not curPlayer.handSize():
+                    playerLeft = True
+            elif retVal == targetPlayerName and not targetPlayer.handSize():
+                pass
+            # Only if the current player has not been successfully challenged
+            else:
+                # Same as in Foreign Aid
+                claimPlayerName = await self.playerBlock(
+                    [Character.Captain, Character.Ambassador]
+                )
+                if not curPlayer.handSize():
+                    playerLeft = True
+                if claimPlayerName == -1:
+                    await self.acquirePlayerLock(f"Player {curPlayer.name} stealing max 2 coins from {targetPlayerName}.")
+                    stolenCoins: int = targetPlayer.subCoins(2)
+                    curPlayer.addCoins(stolenCoins)
+                    self.releasePlayerLock(f"Player {curPlayer.name} finished stealing from {targetPlayerName}.")
+        elif pm is PlayerMove.Exchange:
+            retVal = await self.resolveChallenges(curPlayer, Character.Ambassador)
+            if retVal == -2:
+                return True
+            elif retVal == curPlayer.name:
+                if not curPlayer.handSize():
+                    playerLeft = True
+            else:
+                await self.acquirePlayerLock(f"Player {curPlayer.name} drawing 2 cards for Exchange.")
+                curPlayer.add(self.deck.pop())
+                curPlayer.add(self.deck.pop())
+                self.releasePlayerLock(f"Player {curPlayer.name} finished drawing 2 cards for Exchange.")
+                discardedCardIdx = await self.ioManager.getPlayerCardChoice(curPlayer.name, False)
+                await self.acquirePlayerLock(f"Player {curPlayer.name} discarding first card for Exchange.")
+                self.deck.add(curPlayer.discard(discardedCardIdx))
+                self.releasePlayerLock(f"Player {curPlayer.name} finished discarding first card for Exchange.")
+                discardedCardIdx = await self.ioManager.getPlayerCardChoice(curPlayer.name, False)
+                await self.acquirePlayerLock(f"Player {curPlayer.name} discarding second card for Exchange.")
+                self.deck.add(curPlayer.discard(discardedCardIdx))
+                self.releasePlayerLock(f"Player {curPlayer.name} finished discarding second card for Exchange.")
+                self.deck.shuffle()
         else:
-            await self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed a move.")
-            self.releasePlayerLock("Player has chosen another move.")
-            print(f"You chose to {pm.name}.\n")
+            await self.acquirePlayerLock(f"Player {curPlayer.name} has confirmed move {pm.name}.")
+            curPlayer.leave(self.discard)
+            del self.players[0]
+            playerLeft = True
+
+            self.releasePlayerLock("Player has successfully quit the game.")
 
         if len(self.players) == 1:
             return True
@@ -415,7 +511,7 @@ class CoupGame:
             the result is only one player remaining in the game, or the name of
             the player who LOST the challenge and has discarded a card if there
             are still players remaining after the challenge."""
-        challengerName: int = await self.ioManager.getChallenges(curPlayer)
+        challengerName: int = await self.ioManager.getChallenges(curPlayer.name)
         if challengerName == -1:
             return challengerName
         revealedCardIdx: int = await self.ioManager.getPlayerCardChoice(curPlayer.name)
@@ -439,16 +535,39 @@ class CoupGame:
                 return -2
             return curPlayer.name
 
+    async def playerBlock(self, characterList: list[Character]) -> int:
+        """Identifies if there are any players that would like to claim one of
+        the characters in characterList to block the most recent action.
+
+        :returns: -1 if no one claims one of the blocking roles, -2 if only one
+            player has cards as a result of this process, or the name of a
+            player who has successfully claimed one of the characters."""
+        claimPlayerName: int
+        # Players can continue claiming roles until no on claims them or until
+        # one person successfully claims a role
+        while True:
+            claimPlayerName, claimPlayerRole = await self.ioManager.askPlayersRoles(characterList)
+            if claimPlayerName != -1:
+                claimPlayer = self.getPlayerByName(claimPlayerName)
+                retVal = await self.resolveChallenges(claimPlayer, claimPlayerRole)
+                if retVal == -2:
+                    return -2
+                # Player unsuccessfully claims their role
+                elif retVal == claimPlayerName:
+                    continue
+                # Otherwise, player has successfully claimed their Role
+            break
+        return claimPlayerName
 
     async def updateNextPlayer(self, playerLeft: bool):
         """Updates nextPlayer to the next player in the turn order.
 
         Locks: checks playerLock."""
-        await self.acquirePlayerLock("Updating nextPlayer.")
         if not playerLeft:
+            await self.acquirePlayerLock("Updating nextPlayer.")
             self.players.append(self.players.pop(0))
             self.playerNames.append(self.playerNames.pop(0))
-        self.releasePlayerLock("Finished updating nextPlayer.")
+            self.releasePlayerLock("Finished updating nextPlayer.")
 
     def getPlayerByName(self, name: int) -> Player:
         """Locks: does not check playerLock
@@ -503,7 +622,6 @@ class CoupGame:
             pass
         await self.ioManager.playerWon(self.players[0])
 
-    # TODO: remove after testing
     def setHand(self, playerIdx, characters: list[Character]):
         """Sets the corresponding player's hand to have the following list of
         characters. Used for testing."""
@@ -513,9 +631,9 @@ class CoupGame:
 async def startGame():
     players = [1, 2, 3]
     game = CoupGame(players, TextBasedIO())
-    game.setHand(0, [Character.Assassin, Character.Contessa])
-    game.setHand(1, [Character.Assassin, Character.Contessa])
-    game.setHand(2, [Character.Assassin, Character.Contessa])
+    game.setHand(0, [Character.Assassin, Character.Duke])
+    game.setHand(1, [Character.Assassin, Character.Duke])
+    game.setHand(2, [Character.Assassin, Character.Duke])
     print(game)
     await game.startGame()
 
