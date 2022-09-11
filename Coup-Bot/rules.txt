@@ -1,0 +1,1 @@
+This is classic Coup. Rules for classic Coup can be found on websites like: https://www.ultraboardgames.com/coup/game-rules.php. Note that the names for various actions (e.g. `Exchange`) are taken directly from the given website.

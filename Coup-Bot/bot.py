@@ -1,14 +1,14 @@
 from dotenv import load_dotenv
 from discord.ui import Button, Select, View
-from typing import Callable, Coroutine
 from asyncio import Lock
 from discord import SelectOption
+from PIL import Image
 import discord
 import os
 import logging
 
 from io_abc import IO
-from game import CoupGame, Player, PlayerMove, Character, Card, CardList, MAX_PLAYERS, MIN_PLAYERS
+from game import CoupGame, Player, PlayerMove, Character, MAX_PLAYERS, MIN_PLAYERS
 
 load_dotenv()
 
@@ -39,9 +39,10 @@ EMBED_MISC_COLOR = 0x00FF00
 EMBED_ERROR_COLOR = 0xFF0000
 
 playerQueue = []
+playerQueueDisplayNames = []
 playerQueueLock: Lock = Lock()
-"""To prevent race conditions, this should be used whenever playerQueue is 
-changed/used."""
+"""To prevent race conditions, this should be used whenever playerQueue or 
+playerQueueDisplayNames is changed/used."""
 
 cardPicNames = {
     "Ambassador": "o6HpGwo",
@@ -66,6 +67,14 @@ cardPicNames = {
     "DukeDuke": "AXREh1r"
 }
 
+cardPicImages = {
+    "Ambassador": Image.open("./card-images/Ambassador.png"),
+    "Assassin": Image.open("./card-images/Assassin.png"),
+    "Captain": Image.open("./card-images/Captain.png"),
+    "Contessa": Image.open("./card-images/Contessa.png"),
+    "Duke": Image.open("./card-images/Duke.png")
+}
+
 coupCommands = {
 
 }
@@ -87,6 +96,25 @@ def getCardImageURL(cardCombination: str) -> str:
     :returns: URL to be used in embeds.
     """
     return f"https://i.imgur.com/{cardPicNames[cardCombination]}.png"
+
+
+def generateHandCards(hand: list[str]) -> str:
+    """ Uses PIL to generate PNG locally corresponding to the cards in hand.
+
+    :param hand: List of characters in hand.
+    :returns: Path to local PNG.
+    """
+    global cardPicImages
+    baseDirectory = ""
+    tempImageName: str = "tmp.png"
+
+    imageSize = cardPicImages["Ambassador"].size
+    handSize = len(hand)
+    mergedImage = Image.new("RGB", (handSize * imageSize[0], imageSize[1]), (250, 250, 250))
+    for i in range(handSize):
+        mergedImage.paste(cardPicImages[hand[i]], (i * imageSize[0], 0))
+    mergedImage.save(f"{tempImageName}", "PNG")
+    return f"{baseDirectory}{tempImageName}"
 
 
 def getDefaultGameEmbed(title: str, description: str = None) -> discord.Embed:
@@ -156,9 +184,8 @@ class CoupBotIO(IO):
         pass
 
     async def getPlayerInput(self, player: Player) -> PlayerMove:
-        p = await client.fetch_user(player.name)
         embedPlayerInput = getDefaultGameEmbed(
-            f"{p.display_name}, it is your turn.",
+            f"{player.displayName}, it is your turn.",
             "Select the move that you want to make."
         )
 
@@ -167,7 +194,8 @@ class CoupBotIO(IO):
 
         if playerCoins >= 10:
             validOptions = [
-                SelectOption(label = "Coup", value = "Coup")
+                SelectOption(label = "Coup", value = "Coup"),
+                SelectOption(label = "Quit", value = "Quit")
             ]
         else:
             for pm in PlayerMove:
@@ -191,6 +219,7 @@ class CoupBotIO(IO):
             correctUser: bool = interaction.user.id == player.name
             if correctUser:
                 moveSelect.disabled = True
+                moveSelect.placeholder = moveSelect.values[0].replace("_", " ")
             await interaction.response.edit_message(view = moveSelectView)
             return correctUser
 
@@ -208,13 +237,12 @@ class CoupBotIO(IO):
 
         return PlayerMove[moveSelect.values[0]]
 
-    async def getChallenges(self, curPlayer: int, claimCharacter: Character, validPlayerNames: list[int]) -> int:
+    async def getChallenges(self, curPlayer: Player, claimCharacter: Character, validPlayerNames: list[int]) -> int:
         challenger: int
 
-        p = await client.fetch_user(curPlayer)
         embedChallenges = getDefaultGameEmbed(
-            f"Would anyone like to challenge {p.display_name}'s claim of {claimCharacter.name}?",
-            "Note that `No` should only be pressed if everyone would like to not challenge."
+            f"Would anyone like to challenge {curPlayer.displayName}'s claim of {claimCharacter.name}?",
+            "Note that `No` should only be pressed if no one would like to challenge."
         )
 
         noButton = Button(
@@ -236,7 +264,7 @@ class CoupBotIO(IO):
             """
             :returns: True if the user who clicked the button is not curPlayer.
                 False otherwise"""
-            notCurPlayer: bool = (interaction.user.id != curPlayer) and (interaction.user.id in validPlayerNames)
+            notCurPlayer: bool = (interaction.user.id != curPlayer.name) and (interaction.user.id in validPlayerNames)
             if notCurPlayer:
                 noButton.disabled, yesButton.disabled = True, True
                 button.style = discord.ButtonStyle.blurple
@@ -247,13 +275,13 @@ class CoupBotIO(IO):
             if await challengesButtonResponse(noButton, interaction):
                 nonlocal challenger
                 challenger = -1
-                self.releaseValidInputLock(f"No player is challenging Player {curPlayer}.")
+                self.releaseValidInputLock(f"No player is challenging Player {curPlayer.name}.")
 
         async def yesButtonCallback(interaction):
             if await challengesButtonResponse(yesButton, interaction):
                 nonlocal challenger
                 challenger = interaction.user.id
-                self.releaseValidInputLock(f"Player {challenger} is challenging Player {curPlayer}.")
+                self.releaseValidInputLock(f"Player {challenger.name} is challenging Player {curPlayer.name}.")
 
         noButton.callback = noButtonCallback
         yesButton.callback = yesButtonCallback
@@ -274,13 +302,21 @@ class CoupBotIO(IO):
 
         playerOptions = []
 
-        for p in playerList:
-            if p.name == player.name:
+        for i in range(0, len(playerList)):
+            curPlayer = playerList[i]
+            if curPlayer.name == player.name:
                 continue
             playerOptions.append(SelectOption(
-                label = p.displayName,
-                value = str(p.name)
+                label = curPlayer.displayName,
+                value = str(i)
             ))
+        # for p in playerList:
+        #     if p.name == player.name:
+        #         continue
+        #     playerOptions.append(SelectOption(
+        #         label = p.displayName,
+        #         value = str(p.name)
+        #     ))
 
         playerTargetSelect = Select(
             placeholder = "Choose Player",
@@ -293,6 +329,7 @@ class CoupBotIO(IO):
             correctUser: bool = interaction.user.id == player.name
             if correctUser:
                 playerTargetSelect.disabled = True
+                playerTargetSelect.placeholder = playerList[int(playerTargetSelect.values[0])].displayName
             await interaction.response.edit_message(view = playerTargetView)
             return correctUser
 
@@ -308,19 +345,18 @@ class CoupBotIO(IO):
         await self.acquireValidInputLock(f"Confirmed Player {player.name} has chosen a target.")
         self.releaseValidInputLock(f"Confirmed Player {player.name} has chosen a target.")
 
-        return int(playerTargetSelect.values[0])
+        return playerList[int(playerTargetSelect.values[0])].name
 
     async def getPlayerCardChoice(self, player: Player, isReveal: bool = True) -> int:
         playerCharacters: list[str] = [card.character.name for card in player.hand.cardList]
-        revealedCardIndex: int = 0
+        revealedCardIndex: int
 
         revealDiscardString: str = "reveal" if isReveal else "discard"
 
         playerCardChosenFooter: str = None
 
-        if len(playerCharacters) == 2:
-            playerCharactersSorted = playerCharacters.copy()
-            playerCharactersSorted.sort()
+        if len(playerCharacters) >= 2:
+            playerCharactersUnique = sorted(set(playerCharacters.copy()))
 
             continueEmbed = getDefaultGameEmbed(
                 f"{player.displayName} press Continue to choose a card to {revealDiscardString}."
@@ -330,12 +366,17 @@ class CoupBotIO(IO):
             continueView.add_item(continueButton)
 
             playerCardChoiceEmbed = getDefaultGameEmbed(
-                f"Which card would you like to discard?"
+                f"Which card would you like to {revealDiscardString}?"
             )
-            playerCardChoiceOptions: list[SelectOption] = [
-                SelectOption(label = playerCharactersSorted[0], value = playerCharactersSorted[0]),
-                SelectOption(label = playerCharactersSorted[1], value = playerCharactersSorted[1])
-            ]
+            playerCardChoiceOptions: list[SelectOption] = []
+            for characterName in playerCharactersUnique:
+                playerCardChoiceOptions.append(
+                    SelectOption(label = characterName, value = characterName)
+                )
+            # playerCardChoiceOptions: list[SelectOption] = [
+            #     SelectOption(label = playerCharactersUnique[0], value = f"{playerCharactersUnique[0]}0"),
+            #     SelectOption(label = playerCharactersUnique[1], value = f"{playerCharactersUnique[1]}1")
+            # ]
             playerCardChoiceSelect = Select(
                 placeholder = "Choose Card",
                 options = playerCardChoiceOptions
@@ -359,8 +400,9 @@ class CoupBotIO(IO):
 
             async def playerCardChoiceSelectCallback(interaction: discord.Interaction):
                 playerCardChoiceSelect.disabled = True
+                playerCardChoiceSelect.placeholder = playerCardChoiceSelect.values[0]
                 self.releaseValidInputLock(f"Player {player.name} chose card to {revealDiscardString}")
-                await interaction.message.edit(view = playerCardChoiceView)
+                await interaction.response.edit_message(view = playerCardChoiceView)
 
             continueButton.callback = continueButtonCallback
             playerCardChoiceSelect.callback = playerCardChoiceSelectCallback
@@ -373,15 +415,16 @@ class CoupBotIO(IO):
             await self.acquireValidInputLock(f"Confirmed that Player {player.name} chose card to {revealDiscardString}")
             self.releaseValidInputLock(f"Confirmed that Player {player.name} chose card to {revealDiscardString}")
 
-            if playerCharacters[0] == playerCardChoiceSelect.values[0]:
-                revealedCardIndex = 0
-            else:
-                revealedCardIndex = 1
+            for i in range(0, len(playerCharacters)):
+                if playerCharacters[i] == playerCardChoiceSelect.values[0]:
+                    revealedCardIndex = i
+                    break
         else:
-            playerCardChosenFooter = f"Since {player.displayName} has only one card, it was chosen by default."
+            playerCardChosenFooter = f"{player.displayName} has only one card, so it was chosen by default."
+            revealedCardIndex = 0
 
         playerCardChosenEmbed = getDefaultGameEmbed(
-            f"{player.displayName} has chosen to {revealDiscardString}"
+            f"{player.displayName} has chosen to {revealDiscardString}:"
         )
         playerCardChosenEmbed.set_image(
             url = getCardImageURL(playerCharacters[revealedCardIndex])
@@ -483,7 +526,10 @@ class CoupBotIO(IO):
                 askRolesSelect.disabled, noClaimsButton.disabled = True, True
                 if button:
                     button.style = discord.ButtonStyle.blurple
+                else:
+                    askRolesSelect.placeholder = askRolesSelect.values[0]
             await interaction.response.edit_message(view = askRolesView)
+            return validPlayer
 
         async def askRolesSelectCallback(interaction):
             if await askRolesComponentResponse(interaction):
@@ -573,7 +619,7 @@ async def on_message(message):
 
     if message.content == "!startgame":
         global currentGame
-        currentGame = CoupGame([978064548265336834, 293887496553496576], CoupBotIO())
+        currentGame = CoupGame([293887496553496576, 978064548265336834], ["WenWen Pickle", "WenWen Cheese"], CoupBotIO())
         await currentGame.startGame()
         currentGame = None
 
@@ -635,36 +681,233 @@ async def usedInAcceptedChannel(interaction: discord.Interaction,
     return True
 
 
-# @tree.command(name = "startgame", description = "Starts the Uno game.", guild = discord.Object(id = UNO_SERVER_ID))
-# async def self(interaction: discord.Interaction):
-#     global currentGame
-#     global playerQueue
-#     if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
-#         if not currentGame:
-#             await playerQueueLock.acquire()
-#             if len(playerQueue) < MIN_PLAYERS:
-#                 errorMessage = f"Unable to start game. {len(playerQueue)} out of a "
-#                 errorMessage += f"minimum of {MIN_PLAYERS} players are in queue."
-#                 await interaction.response.send_message(
-#                     embed = getDefaultErrorEmbed(errorMessage)
-#                 )
-#                 return
-#             frontQueue: list[int] = playerQueue[:MAX_PLAYERS]
-#             await interaction.response.send_message(
-#                 embed = getDefaultMiscEmbed(
-#                     f"Starting Uno game with {len(frontQueue)} players.",
-#                     f"The maximum number of players in a game is {MAX_PLAYERS}."
-#                 )
-#             )
-#             currentGame = CoupGame(playerQueue[:MAX_PLAYERS], CoupBotIO())
-#             playerQueue = playerQueue[MAX_PLAYERS:]
-#             playerQueueLock.release()
-#             await currentGame.startGame()
-#             currentGame = None
-#         else:
-#             await interaction.response.send_message(
-#                 embed = getDefaultErrorEmbed("There is already a game in progress.")
-#             )
+@tree.command(name = "hand", description = "Shows current hand.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global currentGame
+    if await usedInAcceptedChannel(interaction, COUP_CHANNEL_ID, COUP_CHANNEL_NAME):
+        playerName: int = interaction.user.id
+        if currentGame:
+            await currentGame.acquirePlayerLock(f"Viewing Player {playerName}'s hand.")
+            try:
+                player: Player = currentGame.getPlayerByName(playerName)
+                playerCharacters: list[str] = [card.character.name for card in player.hand.cardList]
+                playerCharacters.sort()
+                handPNGPath = generateHandCards(playerCharacters)
+                handPNGFile = discord.File(handPNGPath)
+                handEmbed = getDefaultMiscEmbed(f"Coins: {str(player.numCoins())}")
+                handEmbed.set_image(url = f"attachment://{handPNGPath}")
+                await interaction.response.send_message(file = handPNGFile, embed = handEmbed, ephemeral = True)
+            except Exception as e:
+                await interaction.response.send_message(
+                    embed = getDefaultErrorEmbed("There is not an active game/you aren't in the active game."),
+                    ephemeral = True
+                )
+            finally:
+                currentGame.releasePlayerLock(f"Finished viewing player {playerName}'s hand")
+        else:
+            await interaction.response.send_message(
+                embed = getDefaultErrorEmbed("There is not an active game/you aren't in the active game."),
+                ephemeral = True
+            )
+
+
+@tree.command(name = "gamestate", description = "Shows the number of cards in each player's hand.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global currentGame
+    if await usedInAcceptedChannel(interaction, COUP_CHANNEL_ID, COUP_CHANNEL_NAME):
+        if currentGame:
+            await currentGame.acquirePlayerLock("Viewing cards in each player's hands.")
+            players: str = ""
+            numCards: str = ""
+            numCoins: str = ""
+            for player in currentGame.players:
+                players += player.displayName + "\n"
+                numCards += str(player.handSize()) + "\n"
+                numCoins += str(player.numCoins()) + "\n"
+            currentGame.releasePlayerLock("Finished viewing cards in each player's hands.")
+
+            embedGameState = discord.Embed(
+                title = "Current Game State",
+                color = EMBED_MISC_COLOR
+            )
+            embedGameState.add_field(name = "Player Name", value = players, inline = True)
+            embedGameState.add_field(name = "# Cards", value = numCards, inline = True)
+            embedGameState.add_field(name = "# Coins", value = numCoins, inline = True)
+            embedGameState.add_field(name = "Turn Order", value = ":arrow_down:", inline = True)
+            await interaction.response.send_message(embed = embedGameState)
+        else:
+            await interaction.response.send_message(
+                embed = getDefaultErrorEmbed("There is not an active game.")
+            )
+
+
+@tree.command(name = "startgame", description = "Starts the Coup game.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global currentGame
+    global playerQueue
+    global playerQueueDisplayNames
+    if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
+        if not currentGame:
+            await playerQueueLock.acquire()
+            if len(playerQueue) < MIN_PLAYERS:
+                errorMessage = f"Unable to start game. {len(playerQueue)} out of a "
+                errorMessage += f"minimum of {MIN_PLAYERS} players are in queue."
+                await interaction.response.send_message(
+                    embed = getDefaultErrorEmbed(errorMessage)
+                )
+                playerQueueLock.release()
+                return
+            frontQueue: list[int] = playerQueue[:MAX_PLAYERS]
+            await interaction.response.send_message(
+                embed = getDefaultMiscEmbed(
+                    f"Starting Coup game with {len(frontQueue)} players.",
+                    f"The maximum number of players in a game is {MAX_PLAYERS}."
+                )
+            )
+            currentGame = CoupGame(
+                playerQueue[:MAX_PLAYERS],
+                playerQueueDisplayNames[:MAX_PLAYERS],
+                CoupBotIO()
+            )
+            playerQueue = playerQueue[MAX_PLAYERS:]
+            playerQueueDisplayNames = playerQueueDisplayNames[MAX_PLAYERS:]
+            playerQueueLock.release()
+            await currentGame.startGame()
+            currentGame = None
+        else:
+            await interaction.response.send_message(
+                embed = getDefaultErrorEmbed("There is already a game in progress.")
+            )
+
+
+@tree.command(name = "stopgame", description = "Stops the current game of Coup.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global currentGame
+    if interaction.user.id == ADMIN_ID:
+        if currentGame:
+            currentGame = None
+            await interaction.response.send_message(
+                embed = getDefaultGameEmbed("Game has been stopped.")
+            )
+        else:
+            await interaction.response.send_message(
+                embed = getDefaultErrorEmbed("There is no active game."),
+                ephemeral = True
+            )
+    else:
+        await interaction.response.send_message(
+            embed = getDefaultErrorEmbed("You do not have permission to use this command."),
+            ephemeral = True
+        )
+
+
+@tree.command(name = "joinqueue", description = "Join queue for Coup.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global currentGame
+    global playerQueue
+    global playerQueueDisplayNames
+    if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
+        async with playerQueueLock:
+            player = interaction.user.id
+            playerDisplayName = interaction.user.display_name
+
+            # Check that the user isn't in the current game.
+            if currentGame:
+                await currentGame.acquirePlayerLock(f"Checking if player {player} is in the current game.")
+                if player in currentGame.playerNames:
+                    await interaction.response.send_message(
+                        embed = getDefaultErrorEmbed("You are already in the active game.")
+                    )
+                    currentGame.releasePlayerLock(f"Finished checking if player {player} is in the current game.")
+                    return
+                currentGame.releasePlayerLock(f"Finished checking if player {player} is in the current game.")
+
+            if player in playerQueue:
+                await interaction.response.send_message(
+                    embed = getDefaultErrorEmbed("You are already in the queue.")
+                )
+            else:
+                playerQueue.append(player)
+                playerQueueDisplayNames.append(playerDisplayName)
+                embedQueue = discord.Embed(
+                    title = "You have been added to the queue for the next game of Coup.",
+                    description = "Use `/queue` to view your position in queue.\nUse `/leavequeue` to leave the queue.",
+                    color = EMBED_MISC_COLOR
+                )
+                await interaction.response.send_message(
+                    embed = embedQueue
+                )
+
+
+@tree.command(name = "leavequeue", description = "Leaves queue for Coup.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global playerQueue
+    global playerQueueDisplayNames
+    if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
+        async with playerQueueLock:
+            player = interaction.user.id
+            playerFound: bool = False
+            for i in range(0, len(playerQueue)):
+                if playerQueue[i] == player:
+                    del playerQueue[i]
+                    del playerQueueDisplayNames[i]
+                    playerFound = True
+                    break
+            if playerFound:
+                await interaction.response.send_message(
+                    embed = getDefaultMiscEmbed("You have been removed from the queue for Coup.")
+                )
+            else:
+                await interaction.response.send_message(
+                    embed=getDefaultErrorEmbed("You were not in the queue.")
+                )
+
+
+@tree.command(name = "queue", description = "View current queue for Coup.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    global playerQueueDisplayNames
+    if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
+        async with playerQueueLock:
+            players: str = ""
+            for playerDisplayName in playerQueueDisplayNames:
+                players += playerDisplayName + "\n"
+
+            if not players:
+                players = "There are no players in queue currently."
+
+            embedQueue = discord.Embed(
+                title = "Queue for Coup (in order)",
+                description = players,
+                color = EMBED_MISC_COLOR
+            )
+            await interaction.response.send_message(
+                embed = embedQueue
+            )
+
+
+@tree.command(name = "commands", description = "Lists all commands.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
+        commands: str = ""
+        channelNames: str = ""
+        descriptions: str = ""
+        for command, (channelName, description) in coupCommands.items():
+            commands += f"/{command}\n"
+            channelNames += f"{channelName}\n"
+            descriptions += f"{description}\n"
+        embed = getDefaultMiscEmbed("Command List")
+        embed.add_field(name = "Command", value = commands, inline = True)
+        embed.add_field(name = "Channel", value = channelNames, inline = True)
+        embed.add_field(name = "Description", value = descriptions, inline = True)
+        await interaction.response.send_message(embed = embed)
+
+
+@tree.command(name = "rules", description = "Rules of the game.", guild = discord.Object(id = COUP_SERVER_ID))
+async def self(interaction: discord.Interaction):
+    if await usedInAcceptedChannel(interaction, LOBBY_CHANNEL_ID, LOBBY_CHANNEL_NAME):
+        await interaction.response.send_message(
+            embed = getDefaultMiscEmbed("Rules", coupRules)
+        )
 
 
 client.run(TOKEN)

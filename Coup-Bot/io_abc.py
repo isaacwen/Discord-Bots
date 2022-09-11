@@ -35,7 +35,7 @@ class IO(ABC):
         pass
 
     @abstractmethod
-    async def getChallenges(self, curPlayer: int, claimCharacter, validPlayerNames) -> int:
+    async def getChallenges(self, curPlayer, claimCharacter, validPlayerNames) -> int:
         """Asks players if anyone would like to challenge and, if so, returns
         the name of the player who challenged.
 

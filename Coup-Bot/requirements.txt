@@ -1,1 +1,2 @@
 pillow
+discord.py
