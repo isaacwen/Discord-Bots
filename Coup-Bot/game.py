@@ -26,8 +26,8 @@ class PlayerMove(Enum):
 
 
 MAX_PLAYERS = 6
-MIN_PLAYERS = 3
-STARTING_COINS = 3
+MIN_PLAYERS = 2
+STARTING_COINS = 2
 logging.basicConfig(
     level = logging.INFO,
     handlers = [logging.StreamHandler()]
@@ -230,7 +230,7 @@ class TextBasedIO(IO):
         await self.displayMessage(s)
         return PlayerMove(int(await self.getInput(player)) - 1)
 
-    async def getChallenges(self, curPlayer: int, claimCharacter: Character, validPlayerNames: list[int]) -> int:
+    async def getChallenges(self, curPlayer: Player, claimCharacter: Character, validPlayerNames: list[int]) -> int:
         return int(input("Enter name of player who would like to challenge (-1 otherwise): "))
 
     async def getPlayerTargetChoice(self, player: Player, playerList: list[Player]) -> int:
@@ -331,10 +331,6 @@ class CoupGame:
 
         :returns: Whether there is only one player remaining in the game at any
             point during this turn or not."""
-
-        # TODO: remove this after testing
-        print(self)
-
         curPlayer: Player = self.players[0]
         playerLeft: bool = False
         """Set to true if curPlayer quits or is eliminated on this turn."""
@@ -377,7 +373,7 @@ class CoupGame:
                 curPlayer.addCoins(2)
                 self.releasePlayerLock("Player has chosen to take foreign aid.")
         elif pm is PlayerMove.Coup:
-            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.playerNames)
+            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.players)
             targetPlayer: Player = self.getPlayerByName(targetPlayerName)
             await self.acquirePlayerLock(f"Player {curPlayer.name} paying 7 coins to coup {targetPlayerName}.")
             curPlayer.subCoins(7)
@@ -398,7 +394,7 @@ class CoupGame:
                 curPlayer.addCoins(3)
                 self.releasePlayerLock(f"Player {curPlayer.name} finished getting 3 coins from Tax.")
         elif pm is PlayerMove.Assassinate:
-            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.playerNames)
+            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.players)
             targetPlayer: Player = self.getPlayerByName(targetPlayerName)
             retVal = await self.resolveChallenges(curPlayer, Character.Assassin)
             if retVal == -2:
@@ -449,7 +445,7 @@ class CoupGame:
                     if retVal3 == 2:
                         return True
         elif pm is PlayerMove.Steal:
-            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer)
+            targetPlayerName: int = await self.ioManager.getPlayerTargetChoice(curPlayer, self.players)
             targetPlayer: Player = self.getPlayerByName(targetPlayerName)
             retVal = await self.resolveChallenges(curPlayer, Character.Captain)
             if retVal == -2:
@@ -516,7 +512,7 @@ class CoupGame:
             the result is only one player remaining in the game, or the name of
             the player who LOST the challenge and has discarded a card if there
             are still players remaining after the challenge."""
-        challengerName: int = await self.ioManager.getChallenges(curPlayer.name, claimCharacter)
+        challengerName: int = await self.ioManager.getChallenges(curPlayer, claimCharacter, self.playerNames)
         if challengerName == -1:
             return challengerName
         revealedCardIdx: int = await self.ioManager.getPlayerCardChoice(curPlayer)
@@ -637,7 +633,8 @@ class CoupGame:
 
 async def startGame():
     players = [1, 2, 3]
-    game = CoupGame(players, TextBasedIO())
+    playerNames = ["a", "b", "c"]
+    game = CoupGame(players, playerNames, TextBasedIO())
     game.setHand(0, [Character.Assassin, Character.Duke])
     game.setHand(1, [Character.Assassin, Character.Duke])
     game.setHand(2, [Character.Assassin, Character.Duke])
