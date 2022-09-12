@@ -68,15 +68,22 @@ cardPicNames = {
 }
 
 cardPicImages = {
-    "Ambassador": Image.open("./card-images/Ambassador.png"),
-    "Assassin": Image.open("./card-images/Assassin.png"),
-    "Captain": Image.open("./card-images/Captain.png"),
-    "Contessa": Image.open("./card-images/Contessa.png"),
-    "Duke": Image.open("./card-images/Duke.png")
+    "Ambassador": Image.open("card-images/Ambassador.png"),
+    "Assassin": Image.open("card-images/Assassin.png"),
+    "Captain": Image.open("card-images/Captain.png"),
+    "Contessa": Image.open("card-images/Contessa.png"),
+    "Duke": Image.open("card-images/Duke.png")
 }
 
 coupCommands = {
-
+    "commands": [LOBBY_CHANNEL_NAME, "View all commands"],
+    "rules": [LOBBY_CHANNEL_NAME, "View rules"],
+    "queue": [LOBBY_CHANNEL_NAME, "View the current queue"],
+    "joinqueue": [LOBBY_CHANNEL_NAME, "Join the queue"],
+    "leavequeue": [LOBBY_CHANNEL_NAME, "Leave the queue"],
+    "startgame": [LOBBY_CHANNEL_NAME, "Start a game"],
+    "hand": [COUP_CHANNEL_NAME, "View current hand"],
+    "gamestate": [COUP_CHANNEL_NAME, "View current game state"]
 }
 """All commands currently available for public use. Each is associated with the
 channel that it must be used in and a brief description."""
@@ -100,6 +107,7 @@ def getCardImageURL(cardCombination: str) -> str:
 
 def generateHandCards(hand: list[str]) -> str:
     """ Uses PIL to generate PNG locally corresponding to the cards in hand.
+    User is responsible for deleting temporary PNG afterwards.
 
     :param hand: List of characters in hand.
     :returns: Path to local PNG.
@@ -310,13 +318,6 @@ class CoupBotIO(IO):
                 label = curPlayer.displayName,
                 value = str(i)
             ))
-        # for p in playerList:
-        #     if p.name == player.name:
-        #         continue
-        #     playerOptions.append(SelectOption(
-        #         label = p.displayName,
-        #         value = str(p.name)
-        #     ))
 
         playerTargetSelect = Select(
             placeholder = "Choose Player",
@@ -373,10 +374,7 @@ class CoupBotIO(IO):
                 playerCardChoiceOptions.append(
                     SelectOption(label = characterName, value = characterName)
                 )
-            # playerCardChoiceOptions: list[SelectOption] = [
-            #     SelectOption(label = playerCharactersUnique[0], value = f"{playerCharactersUnique[0]}0"),
-            #     SelectOption(label = playerCharactersUnique[1], value = f"{playerCharactersUnique[1]}1")
-            # ]
+
             playerCardChoiceSelect = Select(
                 placeholder = "Choose Card",
                 options = playerCardChoiceOptions
@@ -605,61 +603,6 @@ async def on_message(message):
             pass
         return
 
-    # TODO: remove all of these
-    if message.content == ".img":
-        embed = discord.Embed(title = "Title", description = "Desc", color = EMBED_MISC_COLOR)
-        file2 = discord.File("./card-images/AmbassadorAssassin.png", filename = "ambassador.png")
-        embed.set_image(url="https://i.imgur.com/iQOFAZz.png")
-        await message.channel.send(embed=embed)
-
-    if message.content in cardPicNames.keys():
-        embed = discord.Embed(title = "Title", description = "Desc", color = EMBED_MISC_COLOR)
-        embed.set_image(url = getCardImageURL(message.content))
-        await message.channel.send(embed = embed)
-
-    if message.content == "!startgame":
-        global currentGame
-        currentGame = CoupGame([293887496553496576, 978064548265336834], ["WenWen Pickle", "WenWen Cheese"], CoupBotIO())
-        await currentGame.startGame()
-        currentGame = None
-
-    if message.content == "test":
-        embedPlayerInput = getDefaultGameEmbed(
-            "It is your turn",
-            "Select the move that you want to make"
-        )
-
-        options = []
-
-        coins = 6
-
-        if coins >= 10:
-            options = [
-                SelectOption(label = "Coup", value = "Coup")
-            ]
-
-        for pm in PlayerMove:
-            if pm is PlayerMove.Coup and coins < 7:
-                continue
-            options.append(SelectOption(
-                label = pm.name.replace("_", " "),
-                value = pm.name
-            ))
-
-        moveSelect = Select(
-            placeholder = "Choose Move",
-            options = options
-        )
-        moveSelectView = View(timeout = None)
-        moveSelectView.add_item(moveSelect)
-
-        async def moveSelectCallback(interaction):
-            await interaction.response.send_message(f"You chose the move {moveSelect.values[0]}")
-
-        moveSelect.callback = moveSelectCallback
-
-        await COUP_CHANNEL.send(embed = embedPlayerInput, view = moveSelectView)
-
 
 async def usedInAcceptedChannel(interaction: discord.Interaction,
                                 acceptedChannelId: int, acceptedChannelName: str) -> bool:
@@ -688,6 +631,7 @@ async def self(interaction: discord.Interaction):
         playerName: int = interaction.user.id
         if currentGame:
             await currentGame.acquirePlayerLock(f"Viewing Player {playerName}'s hand.")
+            handPNGPath: str = None
             try:
                 player: Player = currentGame.getPlayerByName(playerName)
                 playerCharacters: list[str] = [card.character.name for card in player.hand.cardList]
@@ -697,12 +641,14 @@ async def self(interaction: discord.Interaction):
                 handEmbed = getDefaultMiscEmbed(f"Coins: {str(player.numCoins())}")
                 handEmbed.set_image(url = f"attachment://{handPNGPath}")
                 await interaction.response.send_message(file = handPNGFile, embed = handEmbed, ephemeral = True)
-            except Exception as e:
+            except Exception:
                 await interaction.response.send_message(
                     embed = getDefaultErrorEmbed("There is not an active game/you aren't in the active game."),
                     ephemeral = True
                 )
             finally:
+                if handPNGPath and os.path.exists(handPNGPath):
+                    os.remove(handPNGPath)
                 currentGame.releasePlayerLock(f"Finished viewing player {playerName}'s hand")
         else:
             await interaction.response.send_message(

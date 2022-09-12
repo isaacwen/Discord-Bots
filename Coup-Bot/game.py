@@ -341,27 +341,6 @@ class CoupGame:
             curPlayer.addCoins(1)
             self.releasePlayerLock("Player has finished taking income.")
         elif pm is PlayerMove.Foreign_Aid:
-            # # Players can continue claiming Duke until no one claims it or until
-            # # one person successfully claims it
-            # claimPlayerName: int
-            # while True:
-            #     claimPlayerName, _ = await self.ioManager.askPlayersRoles([Character.Duke])
-            #     if claimPlayerName != -1:
-            #         claimPlayer = self.getPlayerByName(claimPlayerName)
-            #         retVal = await self.resolveChallenges(claimPlayer, Character.Duke)
-            #         if retVal == -2:
-            #             return True
-            #         # Player unsuccessfully claims Duke
-            #         elif retVal == claimPlayerName:
-            #             continue
-            #         # Player successfully claims Duke
-            #         elif retVal == curPlayer.name:
-            #             if not curPlayer.handSize():
-            #                 playerLeft = True
-            #         # Otherwise, also player has successfully claimed Duke
-            #     # If claimPlayerName == -1, no one claims Duke
-            #     break
-
             claimPlayerName = await self.playerBlock([Character.Duke])
             # Check whether curPlayer has run out of cards
             if not curPlayer.handSize():
