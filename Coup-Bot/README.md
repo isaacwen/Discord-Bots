@@ -126,7 +126,7 @@ Another example is if User 1 declares they want to Assassinate User 2. After cha
 The process afterwards if a counter-claim is declared is very similar to the previous, except no second prompt is provided in the case that User 2 gets successfully challenged (see [Failed Challenge/Failed Contessa Claim on Assassinate](#doubleKillAssassinate)).
 
 
-## Gameplay Examples
+## Full Turn Examples
 I will now show some examples of turns to demonstrate implemented mechanics that have not been shown in the previous section.
 
 ### Ambassador <a name = "ambassador"></a>
