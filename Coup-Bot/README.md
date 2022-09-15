@@ -78,6 +78,16 @@ For example, we have that User 1 claims that they are a Duke and wishes to Tax. 
 
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190283372-c4fe358c-513b-4ec9-aca2-cf8b341edebb.png" width = 400></p>
 
+If instead a player wishes to challenge User 1's claim of Duke, User 1 has to reveal a card. If the revealed card is a Duke, then the challenging player must discard a card.
+
+<p float = "left" align = "center">
+  <img src="https://user-images.githubusercontent.com/76772867/190285094-2590adcd-e717-423a-8c42-715437c1aef6.png" width=37% valign = "middle">
+  <img src="https://user-images.githubusercontent.com/76772867/190285176-8ae7468b-959f-4392-a5a9-18519132fa53.png" width=33% valign = "middle">
+</p>
+
+In contrast, if the revealed card is not a Duke, then the claiming player, User 1 in this case, would have to discard a card.
+
+### 
 
 
 
@@ -97,7 +107,7 @@ For example, if there are not enough players in queue and a user uses the `/star
 
 
 
-<p align = "center"><img src = "" width = ></p>
+
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
