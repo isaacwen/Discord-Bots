@@ -42,7 +42,7 @@ I will show examples of how the bot receives input from players throughout the g
 At various stages in the game, players need to give inputs to the bot as to what they want to do. How this bot receives inputs varies slightly depending on the action, however all input is given through Button and Select (dropdown menus) components to simplify parsing player input (by avoiding custom player inputs entirely).
 
 ### Beginning of Turn
-For example, when a player's turn begins and they need to declare an action for a turn, they are presented with a dropdown menu that they can select an action from. Only actions which a player can afford, given their current coins, are displayed. For example, in the following `User 1` only has 2 coins, thus they do not have the option to Assassinate or Coup another player.
+For example, when a player's turn begins and they need to declare an action for a turn, they are presented with a dropdown menu that they can select an action from. Only actions which a player can afford, given their current coins, are displayed. For example, in the following User 1 only has 2 coins, thus they do not have the option to Assassinate or Coup another player.
 
 <p float = "left" align = "center">
   <img src="https://user-images.githubusercontent.com/76772867/189581571-79925aaa-d844-4b21-a1ee-b5ac4aee839c.png" width=33% style="vertical-align: middle">
@@ -71,7 +71,12 @@ Finally, when a player has more than 10 coins, they must Coup, so the only optio
   <img src="https://user-images.githubusercontent.com/76772867/189583049-afc7f90b-d9ae-481e-b731-6cfb40e1660c.png" width=33% style="vertical-align: middle">
 </p>
 
+### Challenging Claims
+Another instance when players provide input is when they want to challenge a claim another player makes. Whenever a player makes a claim (henceforth referred to as the 'claiming player'), a prompt is sent that any player other than the claiming player can respond to. If there are no players that want to challenge the claim, then one of the players aside from the claiming player can press `No` and the move associated with the claim with commence. However, if a player wants to challenge the claim (henceforth referred to as the 'challenging player'), then they can press the `Yes` Button, after which the claiming player is forced to reveal a card and either the claiming player or the challenging player will have to discard a card, when appropriate.
 
+For example, we have that User 1 claims that they are a Duke and wishes to Tax. A prompt appears indicating that User 1 is claiming Duke and asks if anyone would like to challenge. If no one would like to challenge, then User 1 gets 3 coins and play commences.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190283372-c4fe358c-513b-4ec9-aca2-cf8b341edebb.png" width = 400></p>
 
 
 
