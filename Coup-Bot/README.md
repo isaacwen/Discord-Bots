@@ -71,7 +71,23 @@ Finally, when a player has more than 10 coins, they must Coup, so the only optio
   <img src="https://user-images.githubusercontent.com/76772867/189583049-afc7f90b-d9ae-481e-b731-6cfb40e1660c.png" width=33% style="vertical-align: middle">
 </p>
 
-### Challenging Claims
+### Targeting Players
+When a player (referred to in this section as the 'acting player') wishes to Assassinate, Steal from, or Coup another player, they must select a player to target. A prompt will be displayed that will allow the acting player to choose a target from a list of all the players in the game. Note that this is done before challenges are resolved, such that a player will declare their target for Assassinate or Steal before players must decide whether they want to challenge or not.
+
+For example, if User 1 claims that they are a Captain and wishes to Steal, they will then be prompted to choose which player they want to steal from.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190292120-ede4bcd9-022c-45a8-91d3-5ecdc8cf19d5.png" width = 400></p>
+
+
+### Revealing/Discarding Cards
+When players are challenged or when they lose a life, they must select what card to reveal/discard. The difference between this input and another other input requested from players is that that the options that a player has in terms of the cards that they can choose to reveal/discard must be hidden from all other players. This is implemented by asking for input from the player through an ephemeral message. Since ephemeral messages can only be invoked in Discord as part of an interaction (i.e. by clicking a button), a prompt is used before each instance where a player might need to reveal/discard a card.
+
+For example, if User 1 claims that they are a Duke and wishes to Tax, then another player challenges their claim, User 1 must then choose to reveal a card out of the cards that they currently have in their hand.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190288082-d11fb4c9-1f42-4a2e-b73f-5239f318e35f.png" width = ></p>
+
+
+### Challenging Claims <a name = "challengingClaims"></a>
 Another instance when players provide input is when they want to challenge a claim another player makes. Whenever a player makes a claim (henceforth referred to as the 'claiming player'), a prompt is sent that any player other than the claiming player can respond to. If there are no players that want to challenge the claim, then one of the players aside from the claiming player can press `No` and the move associated with the claim with commence. However, if a player wants to challenge the claim (henceforth referred to as the 'challenging player'), then they can press the `Yes` Button, after which the claiming player is forced to reveal a card and either the claiming player or the challenging player will have to discard a card, when appropriate.
 
 For example, we have that User 1 claims that they are a Duke and wishes to Tax. A prompt appears indicating that User 1 is claiming Duke and asks if anyone would like to challenge. If no one would like to challenge, then User 1 gets 3 coins and play commences.
@@ -108,8 +124,8 @@ For example, if there are not enough players in queue and a user uses the `/star
 
 
 
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
+
+
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
