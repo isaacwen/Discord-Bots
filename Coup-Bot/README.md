@@ -103,7 +103,19 @@ If instead a player wishes to challenge User 1's claim of Duke, User 1 has to re
 
 In contrast, if the revealed card is not a Duke, then the claiming player, User 1 in this case, would have to discard a card.
 
-### 
+
+### Countering Claims
+For certain actions, instead of challenging the corresponding claims players can also choose to counter the action by claiming an appropriate counter-role. For Foreign Aid and Steal, this is implemented by prompting if any players, instead of the claiming player, would like to claim the appropriate counter roles after challenges are resolved (if appropriate) and before the action is executed. For Assassinate, instead of prompting all players for Contessa, only the targeted player is prompted for whether they would like to claim Contessa. Note that all counter-claims are also subject to being challenged in the exact same way as normal claims for actions are.
+
+Since, in the case of Foreign Aid and Steal, any number of players can claim counter-roles, the prompt for if any players have any counter-roles will loop until either a player successfully counters the claiming player's actions or if no one would like to try and counter the claiming player's action.
+
+For example, if User 1 claims they are a Captain, declares a target to Steal from, and all challenges, if any, are resolved, then a prompt is sent for all the other users asking if anyone would like to make a counter-claim.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190301785-5e281da8-99c9-4852-b075-91ba847f6036.png" width = ></p>
+
+
+
+
 
 
 
