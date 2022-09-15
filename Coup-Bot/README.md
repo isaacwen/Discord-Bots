@@ -1,6 +1,8 @@
 # Coup Bot
 This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played. These two channels will be referred to in the following feature demonstrations as `lobby` and `coup-channel`, respectively.
 
+# Installation Instructions
+
 # Command List
 
 This section lists all the commands that are available and their corresponding functionality.
@@ -152,7 +154,7 @@ When there is only one player remaining in the game, a end game message declarin
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190324314-fc779474-641b-498d-b4be-b22b2e973f58.png" width = 400></p>
 
 
-## Error Handling Examples
+# Error Handling Examples
 Whenever a command is used incorrectly, an appropriate error message is displayed.
 
 For example, if there are not enough players in queue and a user uses the `/startgame` command, the following error message is shown in `lobby`:
