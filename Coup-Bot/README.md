@@ -38,8 +38,10 @@ While players are not able to view the exact cards that other players have, in c
 I will show examples of how the bot receives input from players throughout the game and I will also show some gameplay examples to demonstrate what a turns in a game run by this bot may look like.
 
 
-## Receiving Input
+## Receiving Input <a name = "receivingInput"></a>
 At various stages in the game, players need to give inputs to the bot as to what they want to do. How this bot receives inputs varies slightly depending on the action, however all input is given through Button and Select (dropdown menus) components to simplify parsing player input (by avoiding custom player inputs entirely).
+
+All methods of receiving input are directed at specific player(s). In each of these cases, Buttons and Selects will only accept input from the designated players. If other players (or users that are not in the game) attempt to respond to a prompt that is not directed at them, they prompt will not respond to their input.
 
 ### Beginning of Turn
 For example, when a player's turn begins and they need to declare an action for a turn, they are presented with a dropdown menu that they can select an action from. Only actions which a player can afford, given their current coins, are displayed. For example, in the following User 1 only has 2 coins, thus they do not have the option to Assassinate or Coup another player.
@@ -125,8 +127,29 @@ The process afterwards if a counter-claim is declared is very similar to the pre
 
 
 ## Gameplay Examples
+I will now show some examples of turns to demonstrate implemented mechanics that have not been shown in the previous section.
+
 ### Ambassador <a name = "ambassador"></a>
+This shows the sequence of prompts and messages that are sent when User 1 wants to Exchange and his claim of Ambassador is unchallenged.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190323442-78626db7-e9a8-4076-8071-46e350b961a5.png" width = 400></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190323560-1ff7c266-5e3e-41f4-a2d3-e75ce2788d74.png" width = 400></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190323798-37eb6872-c252-4244-aa41-2548ad7def74.png" width = 400></p>
+
+
 ### Failed Challenge/Failed Contessa Claim on Assassinate <a name = "doubleKillAssassinate"></a>
+This is a continuation of the Assassin/Contessa example given in the earlier Countering Claims section. This demonstrates what a turn would look like for a player who gets successfully challenged on their claim of Contessa when they are being Assassinated, causing them to lose 2 lives, hence be eliminated from the game instantly.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190322652-bccada63-e70a-40cd-b024-40ba21add7eb.png" width = 400></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190322088-2bacd317-0aee-4170-8313-36aa53ef57e6.png" width = 400></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190322148-ebb817a3-d673-4c73-9308-aee76094d457.png" width = 400></p>
+
+
+
+### End Game
+When there is only one player remaining in the game, a end game message declaring the winner is displayed.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190324314-fc779474-641b-498d-b4be-b22b2e973f58.png" width = 400></p>
 
 
 ## Error Handling Examples
@@ -149,10 +172,8 @@ For example, if there are not enough players in queue and a user uses the `/star
 
 
 
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
+
+
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
