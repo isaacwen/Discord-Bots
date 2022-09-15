@@ -1,5 +1,5 @@
 # Coup Bot
-This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played. These two channels will be referred to in the following feature demonstrations as 'lobby' and 'coup-channel', respectively.
+This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played.
 
 # Contents
 - [Installation](#installation)
@@ -61,6 +61,8 @@ I will show examples of how the bot receives input from players throughout the g
 At various stages in the game, players need to give inputs to the bot as to what they want to do. How this bot receives inputs varies slightly depending on the action, however all input is given through Button and Select (dropdown menus) components to simplify parsing player input (by avoiding custom player inputs entirely).
 
 All methods of receiving input are directed at specific player(s). In each of these cases, Buttons and Selects will only accept input from the designated players. If other players (or users that are not in the game) attempt to respond to a prompt that is not directed at them, they prompt will not respond to their input.
+
+Furthermore, whenever a player responds to a prompt, their response is preserved within the prompt. As can be observed in the following examples, if a user presses a Button, the Button that they press will be highlighted in blue. If a user chooses an option from a Select, that option will be the one displayed as the default value. In both cases, after the user has provided input all Buttons/Selects are disabled. Thus, the progression of moves and decisions made throughout the game can be view simply by reviewing the messages in the game channel in chronological order.
 
 ### Beginning of Turn
 For example, when a player's turn begins and they need to declare an action for a turn, they are presented with a dropdown menu that they can select an action from. Only actions which a player can afford, given their current coins, are displayed. For example, in the following User 1 only has 2 coins, thus they do not have the option to Assassinate or Coup another player.
@@ -173,31 +175,12 @@ When there is only one player remaining in the game, a end game message declarin
 # Error Handling Examples <a name = "errorHandlingExamples"></a>
 Whenever a command is used incorrectly, an appropriate error message is displayed.
 
-For example, if there are not enough players in queue and a user uses the `/startgame` command, the following error message is shown in `lobby`:
+For example, if there are not enough players in queue and a user uses the `/startgame` command, the following error message is shown in lobby:
 
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189576605-efd24eb9-ed05-43bf-ad42-8b081d4de6bd.png" width = 500></p>
 
+If a command is not being used in the correct channel, an ephemeral message is sent as a response indicating the channel that the command should be used in. This is to prevent the commands from cluttering up other channels in the server.
 
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190527705-69414779-5996-4ea3-bc88-088459a12b26.png" width = 450></p>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
+No error handling is needed for player inputs, as players can only choose from a predetermined set of inputs that are all determined to be valid.
