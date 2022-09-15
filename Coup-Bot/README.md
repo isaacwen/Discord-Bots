@@ -113,12 +113,20 @@ For example, if User 1 claims they are a Captain, declares a target to Steal fro
 
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190301785-5e281da8-99c9-4852-b075-91ba847f6036.png" width = ></p>
 
+Say that User 3 then makes a counter-claim that they are an Ambassador to block the Steal, but then gets challenged by User 1. User 3 then does not reveal a Duke, which means that he must discard a card and all users aside from User 1 are prompted again if anyone would like to counter-claim User 1's claim of a Captain.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190318161-5c4e2647-4c43-4564-bfc8-e1187dcea1de.png" width = 450></p>
+
+Another example is if User 1 declares they want to Assassinate User 2. After challenges are resolved, User 2 is then prompted for whether they want to claim Contessa or not.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190319287-5518fe85-9b5c-4365-bd4d-f9384517c6b7.png" width = 400></p>
+
+The process afterwards if a counter-claim is declared is very similar to the previous, except no second prompt is provided in the case that User 2 gets successfully challenged (see [Failed Challenge/Failed Contessa Claim on Assassinate](#doubleKillAssassinate)).
 
 
-
-
-
-
+## Gameplay Examples
+### Ambassador <a name = "ambassador"></a>
+### Failed Challenge/Failed Contessa Claim on Assassinate <a name = "doubleKillAssassinate"></a>
 
 
 ## Error Handling Examples
@@ -138,8 +146,9 @@ For example, if there are not enough players in queue and a user uses the `/star
 
 
 
-<p align = "center"><img src = "" width = ></p>
-<p align = "center"><img src = "" width = ></p>
+
+
+
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
 <p align = "center"><img src = "" width = ></p>
