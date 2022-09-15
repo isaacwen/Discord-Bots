@@ -1,9 +1,26 @@
 # Coup Bot
-This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played. These two channels will be referred to in the following feature demonstrations as `lobby` and `coup-channel`, respectively.
+This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played. These two channels will be referred to in the following feature demonstrations as 'lobby' and 'coup-channel', respectively.
 
-# Installation Instructions
+# Contents
+- [Installation](#installation)
+- [Command List](#commandList)
+- [Gameplay](#gameplay)
+  -  [Receiving Input](#receivingInput)
+  -  [Full Turn Examples](#fullTurnExamples)
+- [Error Handling Examples](#errorHandlingExamples)
 
-# Command List
+
+# Installation <a name = "installation"></a>
+
+1. Install Python 3.10+.
+2. Download/clone repository locally.
+3. Run `pip install -r requirements.txt` from the Coup-Bot directory.
+4. In the Discord server that you would like this bot to run in, create two channels for the lobby and the game channel.
+5. Configure a new bot on Discord Developer Portal with Administrator privileges and all Gateway Intents enabled. Add the bot to the server. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
+6. Fill in the .env file with the corresponding information. See comments in .env file.
+7. Run bot.py. 
+
+# Command List <a name = "commandList"></a>
 
 This section lists all the commands that are available and their corresponding functionality.
 
@@ -36,7 +53,7 @@ While players are not able to view the exact cards that other players have, in c
 
 
 
-# Gameplay
+# Gameplay <a name = "gameplay"></a>
 I will show examples of how the bot receives input from players throughout the game and I will also show some gameplay examples to demonstrate what a turns in a game run by this bot may look like.
 
 
@@ -128,8 +145,8 @@ Another example is if User 1 declares they want to Assassinate User 2. After cha
 The process afterwards if a counter-claim is declared is very similar to the previous, except no second prompt is provided in the case that User 2 gets successfully challenged (see [Failed Challenge/Failed Contessa Claim on Assassinate](#doubleKillAssassinate)).
 
 
-## Full Turn Examples
-I will now show some examples of turns to demonstrate implemented mechanics that have not been shown in the previous section.
+## Full Turn Examples <a name = "fullTurnExamples"></a>
+I will now show some examples of turns to demonstrate implemented mechanics that have not been explored in the previous section.
 
 ### Ambassador <a name = "ambassador"></a>
 This shows the sequence of prompts and messages that are sent when User 1 wants to Exchange and his claim of Ambassador is unchallenged.
@@ -140,12 +157,11 @@ This shows the sequence of prompts and messages that are sent when User 1 wants 
 
 
 ### Failed Challenge/Failed Contessa Claim on Assassinate <a name = "doubleKillAssassinate"></a>
-This is a continuation of the Assassin/Contessa example given in the earlier Countering Claims section. This demonstrates what a turn would look like for a player who gets successfully challenged on their claim of Contessa when they are being Assassinated, causing them to lose 2 lives, hence be eliminated from the game instantly.
+This is a continuation of the Assassin/Contessa example given in the [Countering Claims](https://github.com/isaacwen/Discord-Bots/edit/main/Coup-Bot/README.md#countering-claims) section. This demonstrates what a turn would look like for a player who gets successfully challenged on their claim of Contessa when they are being Assassinated, causing them to lose 2 lives, hence be eliminated from the game instantly.
 
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190322652-bccada63-e70a-40cd-b024-40ba21add7eb.png" width = 400></p>
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190322088-2bacd317-0aee-4170-8313-36aa53ef57e6.png" width = 400></p>
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190322148-ebb817a3-d673-4c73-9308-aee76094d457.png" width = 400></p>
-
 
 
 ### End Game
@@ -154,7 +170,7 @@ When there is only one player remaining in the game, a end game message declarin
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190324314-fc779474-641b-498d-b4be-b22b2e973f58.png" width = 400></p>
 
 
-# Error Handling Examples
+# Error Handling Examples <a name = "errorHandlingExamples"></a>
 Whenever a command is used incorrectly, an appropriate error message is displayed.
 
 For example, if there are not enough players in queue and a user uses the `/startgame` command, the following error message is shown in `lobby`:
