@@ -138,7 +138,7 @@ When a player is drawing cards from the deck, aside from drawing as a result of 
 ### End Game
 When one player has run out of cards, an end game message declaring the winner is displayed.
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190573978-a3721de5-cb8d-4f3e-8cd9-dc4fd7080204.png" width = 400></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190573978-a3721de5-cb8d-4f3e-8cd9-dc4fd7080204.png" width = 500></p>
 
 
 # Error Handling Examples <a name = "errorHandlingExamples"></a>
