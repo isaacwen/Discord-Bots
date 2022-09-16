@@ -1,5 +1,5 @@
-# Coup Bot
-This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played.
+# Uno Bot
+This is a bot that runs a classic game of Uno. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Uno, once started, will be played.
 
 # Contents
 - [Installation](#installation)
@@ -14,9 +14,9 @@ This is a bot that runs a classic game of Coup. This bot is designed to run in t
 
 1. Install Python 3.10+.
 2. Download/clone repository locally.
-3. Run `pip install -r requirements.txt` from the Coup-Bot directory.
+3. Run `pip install -r requirements.txt` from the Uno-Bot directory.
 4. In the Discord server that you would like this bot to run in, create two channels for the lobby and the game channel.
-5. Configure a new bot on Discord Developer Portal with Administrator privileges and all Gateway Intents enabled. Add the bot to the server. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
+5. Configure a new bot on Discord Developer Portal with all Gateway Intents enabled. Add the bot to the server with Administrator privileges. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
 6. Fill in the .env file with the corresponding information. See comments in .env file.
 7. Run bot.py. 
 
