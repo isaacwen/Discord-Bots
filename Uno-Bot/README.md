@@ -1,5 +1,5 @@
 # Uno Bot
-This is a bot that runs a classic game of Uno. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Uno, once started, will be played.
+This is a bot that runs a (almost) classic game of Uno (see [Implementation Details](#implementationDetails)). This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Uno, once started, will be played.
 
 # Contents
 - [Installation](#installation)
@@ -9,6 +9,14 @@ This is a bot that runs a classic game of Uno. This bot is designed to run in tw
   -  [Full Turn Examples](#fullTurnExamples)
 - [Error Handling Examples](#errorHandlingExamples)
 
+# Implementation Details <a name = "implementationDetails"></a>
+The coup that is run through this bot is almost classic Uno, but with a couple differences. One such difference is a common enhancement that is added by players, where, after a player plays a +2 or +4 card, subsequent players can avoid having to draw by playing a card of the same value (+2 or +4, respectively), and the first player who cannot player a card that is of that value has to draw the sum of all cards that previous players would have drawn. For example, if 3 consecutive players played +2 cards, then the fourth player, if they don't have a +2 card to play, would have to draw 6 cards.
+
+The second difference is, when players are drawing cards when they have run out of cards to play and draw a playable card, they do not get to choose whether they want to play the card or not. This implementation method is chosen because it is how the process of drawing cards is formally defined in Uno rules and because the alternative implementation, where users are able to choose to keep a playable card in their hand and keep drawing, can result in unfavorable interactions due to the limitations of ephemeral messages in Discord (i.e. when players are prompted on whether they want to keep a card in their hand or not, other users gain information about the card that the player has drawn).
+
+Another difference is that this game only plays until one person has run out of cards, who wins, whereas classic Uno can be played until there is only one person remaining with cards, who loses.
+
+A final implementation detail is how calling 'Uno!' is implemented. To see a full description of when and how 'Uno!' should be called, see the rules.txt file or the screenshot in [Commands for Rules and Commands](https://github.com/isaacwen/Discord-Bots/edit/main/Uno-Bot/README.md#commands-for-rules-and-commands). This implementation of calling 'Uno!' is designed to be as similar to how calling 'Uno!' in classic Uno is as possible.
 
 # Installation <a name = "installation"></a>
 
@@ -17,7 +25,7 @@ This is a bot that runs a classic game of Uno. This bot is designed to run in tw
 3. Run `pip install -r requirements.txt` from the Uno-Bot directory.
 4. In the Discord server that you would like this bot to run in, create two channels for the lobby and the game channel.
 5. Configure a new bot on Discord Developer Portal with all Gateway Intents enabled. Add the bot to the server with Administrator privileges. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
-6. Add all of the card pictures in 
+6. Add all of the card pictures in the card-images directory as emojis in the server.
 7. Fill in the .env file with the corresponding information. See comments in .env file.
 8. Run bot.py. 
 
@@ -48,9 +56,9 @@ When users are in a game, they can view their current cards that they have in th
 
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190532411-1a5dd09f-da04-47ce-9768-1383fd27091a.png" width = 500></p>
 
-While players are not able to view the exact cards that other players have, in classic Coup any player is entitled to the knowledge of how many cards and coins each other player has. This is replicated using the `/gamestate` command, which can be invoked by any player and publicly displays how many cards and coins each player has, as well as the turn order.
+While players are not able to view the exact cards that other players have, in classic Uno any player is entitled to the knowledge of how many cards each other player has. This is replicated using the `/gamestate` command, which can be invoked by any player and publicly displays how many cards and coins each player has, as well as the turn order.
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189577872-2214a2f0-9d0d-47b1-bfae-4929080679d7.png" width = 300></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190556509-3501a1ab-5cbb-4163-ad95-c8e429b65872.png" width = 300></p>
 
 
 
@@ -59,41 +67,45 @@ I will show examples of how the bot receives input from players throughout the g
 
 
 ## Receiving Input <a name = "receivingInput"></a>
-At various stages in the game, players need to give inputs to the bot as to what they want to do. How this bot receives inputs varies slightly depending on the action, however all input is given through Button and Select (dropdown menus) components to simplify parsing player input (by avoiding custom player inputs entirely).
+At various stages in the game, players need to give inputs to the bot as to what they want to do. How this bot receives inputs varies slightly depending on the action, where input can be given through Button and Select (dropdown menus) components or by sending an emoji in the game channel.
 
-All methods of receiving input are directed at specific player(s). In each of these cases, Buttons and Selects will only accept input from the designated players. If other players (or users that are not in the game) attempt to respond to a prompt that is not directed at them, they prompt will not respond to their input.
+All methods of receiving input are directed at a specific player. In each of these cases, Buttons and Selects will only accept input from the designated player and the bot will only scan for responses in the game channel from the designated player. If other players (or users that are not in the game) attempt to respond to a prompt that is not directed at them, they prompt will not respond to their input.
 
-Furthermore, whenever a player responds to a prompt, their response is preserved within the prompt. As can be observed in the following examples, if a user presses a Button, the Button that they press will be highlighted in blue. If a user chooses an option from a Select, that option will be the one displayed as the default value. In both cases, after the user has provided input all Buttons/Selects are disabled. Thus, the progression of moves and decisions made throughout the game can be view simply by reviewing the messages in the game channel in chronological order.
+Furthermore, whenever a player responds to prompts with Buttons or Selects, their response is preserved within the prompt. As can be observed in the following examples, if a user presses a Button, the Button that they press will be highlighted in blue. If a user chooses an option from a Select, that option will be the one displayed as the default value. In both cases, after the user has provided input all Buttons/Selects are disabled. Thus, the progression of moves and decisions made throughout the game can be view simply by reviewing the messages in the game channel in chronological order.
 
 ### Beginning of Turn
-For example, when a player's turn begins and they need to declare an action for a turn, they are presented with a dropdown menu that they can select an action from. Only actions which a player can afford, given their current coins, are displayed. For example, in the following User 1 only has 2 coins, thus they do not have the option to Assassinate or Coup another player.
+For example, when a player's turn begins and they need to declare an action for a turn, they are presented with several buttons for which they can choose an action for their turn, as well as an image corresponding to the current top card of the discard pile.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190561905-57f5e5d6-0772-473f-b06b-dccc738491b5.png" width = 400></p>
+
+### Playing a Card
+If a player chooses to play a card, a prompt is displayed indicating that the player should respond with the emoji of the card that they want to play. Then, the player can confirm that they want to play that particular card.
+
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190562525-166154b6-7ec9-4711-91b0-701ac972a945.png" width = 500></p>
+
+If a player plays a card that is not in their hand, if they play a card that is not playable given the current top card of the discard pile, or if they click `No` if they do not confirm they wish to play the card they chose, then they are brought back to the beginning prompt for their turn.
 
 <p float = "left" align = "center">
-  <img src="https://user-images.githubusercontent.com/76772867/189581571-79925aaa-d844-4b21-a1ee-b5ac4aee839c.png" width=33% style="vertical-align: middle">
-  <img src="https://user-images.githubusercontent.com/76772867/189581638-d73163db-b957-4575-bc9f-698bbf73a6db.png" width=33% style="vertical-align: middle">
-  <img src="https://user-images.githubusercontent.com/76772867/189581689-195b9208-7de6-41f6-a6f3-4c1ff8b098ab.png" width=33% style="vertical-align: middle">
+  <img src="https://user-images.githubusercontent.com/76772867/190285094-2590adcd-e717-423a-8c42-715437c1aef6.png" width=37% valign = "middle">
+  <img src="https://user-images.githubusercontent.com/76772867/190285176-8ae7468b-959f-4392-a5a9-18519132fa53.png" width=33% valign = "middle">
 </p>
 
-Compare this to when a player has more than 3 coins, at which point they gain the option to Assassinate another player
+### Drawing Cards
+If a player chooses to play a card, then confirms that they want to draw, they will automatically draw cards until they draw a playable card. After the first playable card is found, a message indicating how many cards the player has drawn in total as well as the first playable card itself is displayed.
 
-<p float = "left" align = "center">
-  <img src="https://user-images.githubusercontent.com/76772867/189582100-5863574b-d2fe-40e0-921e-4308aa2093b0.png" width=33% style="vertical-align: middle">
-  <img src="https://user-images.githubusercontent.com/76772867/189582177-fce96976-362a-4443-9151-38736818e82e.png" width=33% style="vertical-align: middle">
-</p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190561721-a7717edc-ed64-4e5d-809c-8f27959855ab.png" width = 500></p>
 
-and simliarly when a player has more than 7 coins, they gain the option to Coup another player.
+#### Drawing on +2 and +4 cards
+The exception to drawing cards is when the top card is a +2 and +4 card and it is still active, that is, prior players all played a card of this value. In this case, players are shown a message in the beginning prompt of their turn indicating that the top +2/+4 card is still active and how many cards the next player who chooses to draw must draw.
 
-<p float = "left" align = "center">
-  <img src="https://user-images.githubusercontent.com/76772867/189582434-eda47b1e-4530-40c6-9a2c-546634f714f2.png" width=33% style="vertical-align: middle">
-  <img src="https://user-images.githubusercontent.com/76772867/189582460-665798f7-bfc6-48e2-959b-8f4175a776d8.png" width=33% style="vertical-align: middle">
-</p>
+For example, we have that User 3 plays a +2 card on a non-active +2 (note that there is no message indicating that the inital +2 is active). On User 1's turn, we now see a message that the top +2 card is active. As User 1 also plays a +2 card, the message is updated in the beginning prompt for User 2's turn to show that User 2, if they choose to draw, must draw 4 cards.
 
-Finally, when a player has more than 10 coins, they must Coup, so the only options that a player can choose from when they have more than 10 coins is to Coup or to quit the game.
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190561082-6cd9e665-f3fd-467d-80ae-1457301b401e.png" width = 500></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190561246-3a60fc5d-1b15-42af-a955-8e8c0f86c060.png" width = 500></p>
 
-<p float = "left" align = "center">
-  <img src="https://user-images.githubusercontent.com/76772867/189582995-b63b19d2-087b-4b2e-b2a8-05ca9fbf6e0b.png" width=33% style="vertical-align: middle">
-  <img src="https://user-images.githubusercontent.com/76772867/189583049-afc7f90b-d9ae-481e-b731-6cfb40e1660c.png" width=33% style="vertical-align: middle">
-</p>
+
+
+
 
 ### Targeting Players
 When a player (referred to in this section as the 'acting player') wishes to Assassinate, Steal from, or Coup another player, they must select a player to target. A prompt will be displayed that will allow the acting player to choose a target from a list of all the players in the game. Note that this is done before challenges are resolved, such that a player will declare their target for Assassinate or Steal before players must decide whether they want to challenge or not.
