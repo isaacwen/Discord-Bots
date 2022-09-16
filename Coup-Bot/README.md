@@ -16,7 +16,7 @@ This is a bot that runs a classic game of Coup. This bot is designed to run in t
 2. Download/clone repository locally.
 3. Run `pip install -r requirements.txt` from the Coup-Bot directory.
 4. In the Discord server that you would like this bot to run in, create two channels for the lobby and the game channel.
-5. Configure a new bot on Discord Developer Portal with Administrator privileges and all Gateway Intents enabled. Add the bot to the server. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
+5. Configure a new bot on Discord Developer Portal with all Gateway Intents enabled. Add the bot to the server with Administrator privileges. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
 6. Fill in the .env file with the corresponding information. See comments in .env file.
 7. Run bot.py. 
 
