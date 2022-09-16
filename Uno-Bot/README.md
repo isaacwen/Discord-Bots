@@ -1,5 +1,5 @@
-# Coup Bot
-This is a bot that runs a classic game of Coup. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Coup, once started, will be played.
+# Uno Bot
+This is a bot that runs a classic game of Uno. This bot is designed to run in two separate Discord channels, with one channel acting as a lobby where players can queue up for a game and review the rules/commands of the game and the other channel acting as a game channel, where a game of Uno, once started, will be played.
 
 # Contents
 - [Installation](#installation)
@@ -14,11 +14,12 @@ This is a bot that runs a classic game of Coup. This bot is designed to run in t
 
 1. Install Python 3.10+.
 2. Download/clone repository locally.
-3. Run `pip install -r requirements.txt` from the Coup-Bot directory.
+3. Run `pip install -r requirements.txt` from the Uno-Bot directory.
 4. In the Discord server that you would like this bot to run in, create two channels for the lobby and the game channel.
 5. Configure a new bot on Discord Developer Portal with all Gateway Intents enabled. Add the bot to the server with Administrator privileges. For help, see the [Discord documentation](https://discord.com/developers/docs/getting-started).
-6. Fill in the .env file with the corresponding information. See comments in .env file.
-7. Run bot.py. 
+6. Add all of the card pictures in 
+7. Fill in the .env file with the corresponding information. See comments in .env file.
+8. Run bot.py. 
 
 # Command List <a name = "commandList"></a>
 
@@ -27,25 +28,25 @@ This section lists all the commands that are available and their corresponding f
 ## Commands for Rules and Commands
 Users can see the rules and commands using the `/rules` and `/commands` commands respectively:
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189575803-399b2e36-8b25-4db5-adda-22691e621adb.png" width = 500></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190531679-a2316e4a-ede7-4f53-b6dd-72731c999827.png" width = 600></p>
 
 ## Player Queue Commands
 Users can queue for a game using the `/joinqueue` command:
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189574667-a1f895a3-998a-4ac6-8241-da0b4b05cf88.JPG" width = 500></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190532044-b9c234a4-4c8c-4b56-b139-cf9cdbf471ed.png" width = 500></p>
 
 After queueing, users can view the current queue of players using the `/queue` command and users can leave the queue using the `/leavequeue` command.
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189575110-f2e69912-a021-49e6-b339-5853421c929f.png" width = 350></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190532084-ab044ffa-f8eb-4695-a5ad-052c703cf54b.png" width = 350></p>
 
 Once enough players are in the queue, any user can start the game using the `/startgame` command.
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189576939-60df05f7-2339-473d-a445-a350104de9ba.png" width = 325></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190532227-fa63667d-5e5f-4b50-a1b8-d729e5f2373e.png" width = 325></p>
 
 ## Game Commands
-When users are in a game, they can view their current cards as well as the number of coins that they have using the `/hand` command. The bot responds with an ephemeral message, which means that only the player who invoked the `/hand` command is able to view the message. This means that a player can view the cards in their hand without any of the other players seeing what cards they have.
+When users are in a game, they can view their current cards that they have in their hand using the `/hand` command. The bot responds with an ephemeral message, which means that only the player who invoked the `/hand` command is able to view the message. This means that a player can view the cards in their hand without any of the other players seeing what cards they have.
 
-<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/189577359-68486257-afd7-44eb-a530-29e177b60f09.png" width = 300></p>
+<p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190532411-1a5dd09f-da04-47ce-9768-1383fd27091a.png" width = 500></p>
 
 While players are not able to view the exact cards that other players have, in classic Coup any player is entitled to the knowledge of how many cards and coins each other player has. This is replicated using the `/gamestate` command, which can be invoked by any player and publicly displays how many cards and coins each player has, as well as the turn order.
 
@@ -184,3 +185,4 @@ If a command is not being used in the correct channel, an ephemeral message is s
 <p align = "center"><img src = "https://user-images.githubusercontent.com/76772867/190527705-69414779-5996-4ea3-bc88-088459a12b26.png" width = 450></p>
 
 No error handling is needed for player inputs, as players can only choose from a predetermined set of inputs that are all determined to be valid.
+
