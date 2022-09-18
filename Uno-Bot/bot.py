@@ -470,7 +470,7 @@ async def on_ready():
 
     global UNO_SERVER
     global UNO_CHANNEL
-    global LOBBY_CHANNEL_ID
+    global LOBBY_CHANNEL
     UNO_SERVER = client.get_guild(UNO_SERVER_ID)
     UNO_CHANNEL = client.get_channel(UNO_CHANNEL_ID)
     LOBBY_CHANNEL = client.get_channel(LOBBY_CHANNEL_ID)
@@ -595,6 +595,7 @@ async def self(interaction: discord.Interaction):
                 await interaction.response.send_message(
                     embed = getDefaultErrorEmbed(errorMessage)
                 )
+                playerQueueLock.release()
                 return
             frontQueue: list[int] = playerQueue[:MAX_PLAYERS]
             await interaction.response.send_message(
