@@ -151,7 +151,6 @@ class Deck:
         self.cards: list[Card] = []
         # Add colored cards
         for color in range(0, 4):
-            # TODO: change this back to range(0, 13) after refactoring to get more emojis
             for value in range(1, 13):
                 self.cards.append(Card(Color(color), Value(value)))
                 if not (Value(value) is Value.zero):
@@ -509,17 +508,6 @@ class UnoGame:
                 playedCard.discardColor = await self.ioManager.getPlayerColorChoice(curPlayer)
             self.discard.addTop(playedCard)
 
-            # # Add actions for the played card
-            # if playedCard.value is Value.reverse:
-            #     self.turnOrder *= -1
-            # elif playedCard.value is Value.drawFour:
-            #     self.skipNextPlayer = True
-            #     self.numDraw += 4
-            # elif playedCard.value is Value.drawTwo:
-            #     self.skipNextPlayer = True
-            #     self.numDraw += 2
-            # elif playedCard.value is Value.skip:
-            #     self.skipNextPlayer = True
             self.updateActions(playedCard)
 
             # If the player has run out of cards, return that player has won.
@@ -530,13 +518,6 @@ class UnoGame:
             curPlayer.unoSafe = True
             self.unoSafeguard = False
             self.releaseUnoSafeguardLock("Finished updating unoSafeguard after player has made a move.")
-            # numCardsToDraw: int = self.numDraw if topDrawAndActive else 1
-            # try:
-            #     for _ in range(0, numCardsToDraw):
-            #         self.playerDraw(curPlayer)
-            # # If there are not enough cards in the deck will say so
-            # except UnoError as e:
-            #     await self.ioManager.displayError(e.message)
 
             if topDrawAndActive:
                 try:

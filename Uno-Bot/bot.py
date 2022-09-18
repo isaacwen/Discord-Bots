@@ -334,194 +334,10 @@ class DiscordBotIO(IO):
 
         return PlayerMove(command), n
 
-        # command: int
-        # n: int = 0
-        #
-        # # s1 = "The top card is currently"
-        # # if topDiscard.color is Color.black:
-        # #     s1 += f" (note that the chosen color of this card is **{topDiscard.discardColor.name}**)"
-        # # await self.displayMessage(s1)
-        # # await self.displayMessage(discord.utils.get(UNO_SERVER.emojis, name = convertCardToEmoji(topDiscard)))
-        # # s2 = f"<@{player.name}> it is your turn. Enter the command for the move "
-        # # s2 += "you would like to make:\n`!play` to play a card.\n`!draw` to draw"
-        # # s2 += " a card.\n`!quit` to quit the game."
-        #
-        # p = await client.fetch_user(player.name)
-        # embedPlayerInput = discord.Embed(
-        #     title = f"{p.display_name} it is your turn.",
-        #     description = "Select the move you would like to make. The current top card is:",
-        #     color = EMBED_GAME_COLOR
-        # )
-        # embedPlayerInput.set_image(url = convertEmojiNameToEmojiURL(convertCardToEmojiName(topDiscard)))
-        # if topDiscard.color is Color.black:
-        #     embedPlayerInput.set_footer(
-        #         text = f"The chosen color of this card is {topDiscard.discardColor.name}."
-        #     )
-        #
-        # def makeConfirmationEmbed(message: str, imageUrl: str = None) -> discord.Embed:
-        #     embedConfirmation = discord.Embed(title = message, color = EMBED_GAME_COLOR)
-        #     if imageUrl:
-        #         embedConfirmation.set_image(url = imageUrl)
-        #     return embedConfirmation
-        #
-        # defStyle: discord.ButtonStyle = discord.ButtonStyle.gray
-        # playButton = Button(label = "Play a card", style = defStyle, custom_id = "playButton")
-        # drawButton = Button(label = "Draw card(s)", style = defStyle, custom_id = "drawButton")
-        # quitButton = Button(label = "Quit game", style = defStyle, custom_id = "quitButton")
-        #
-        # playerInputView = View()
-        # playerInputView.add_item(playButton)
-        # playerInputView.add_item(drawButton)
-        # playerInputView.add_item(quitButton)
-        #
-        # rejectButton = Button(label = "No", style = defStyle, custom_id = "rejectButton")
-        # confirmButton = Button(label = "Yes", style = defStyle, custom_id = "confirmButton")
-        #
-        # confirmationView = View()
-        # confirmationView.add_item(rejectButton)
-        # confirmationView.add_item(confirmButton)
-        #
-        # async def playerInputButtonsResponse(button: Button, interaction: discord.Interaction) -> bool:
-        #     """Returns whether the user who clicked the button is the player."""
-        #     correctUser: bool = False
-        #     if interaction.user.id == player.name:
-        #         playButton.disabled, drawButton.disabled, quitButton.disabled = True, True, True
-        #         button.style = discord.ButtonStyle.blurple
-        #         correctUser = True
-        #     await interaction.response.edit_message(view = playerInputView)
-        #     return correctUser
-        #
-        # async def confirmationButtonsResponse(button: Button, interaction: discord.Interaction) -> bool:
-        #     correctUser: bool = False
-        #     if interaction.user.id == player.name:
-        #         rejectButton.disabled, confirmButton.disabled = True, True
-        #         button.style = discord.ButtonStyle.blurple
-        #         correctUser = True
-        #     await interaction.response.edit_message(view = confirmationView)
-        #     return correctUser
-        #
-        # async def resetButtonsAndAskAgain():
-        #     playButton.disabled, drawButton.disabled, quitButton.disabled = False, False, False
-        #     rejectButton.disabled, confirmButton.disabled = False, False
-        #     playButton.style = discord.ButtonStyle.gray
-        #     drawButton.style = discord.ButtonStyle.gray
-        #     quitButton.style = discord.ButtonStyle.gray
-        #     # Note that only the reject button style will ever need to be reset,
-        #     # as if the user confirms the action there is no need to ask again.
-        #     rejectButton.style = discord.ButtonStyle.gray
-        #     await self.displayEmbed(embedPlayerInput, playerInputView)
-        #
-        # async def playButtonCallback(interaction):
-        #     if await playerInputButtonsResponse(playButton, interaction):
-        #         nonlocal n
-        #         nonlocal command
-        #         s3 = "What card would you like to play? Respond with the "
-        #         s3 += "corresponding emoji."
-        #         await self.displayEmbed(getDefaultGameEmbed(s3))
-        #         # Emojis read in will also have format <:EMOJI_NAME:EMOJI_ID>
-        #         chosenCard: str = await self.getInput(player)
-        #         chosenCard = (chosenCard.split(":"))[1]
-        #         chosenColor, chosenValue = chosenCard.split("_")
-        #         cardInHand: bool = False
-        #         m: int = 0
-        #         for card in player.hand:
-        #             if card.correctColorValue(chosenColor, chosenValue):
-        #                 cardInHand = True
-        #                 break
-        #             m += 1
-        #         if not cardInHand:
-        #             await self.displayEmbed(
-        #                 embed = getDefaultErrorEmbed("The card that you selected was not in your hand.")
-        #             )
-        #             await resetButtonsAndAskAgain()
-        #         else:
-        #             command = 0
-        #             n = m
-        #             s = "Are you sure you want to play the following card:"
-        #             await self.displayEmbed(
-        #                 makeConfirmationEmbed(s, convertEmojiNameToEmojiURL(chosenCard)),
-        #                 confirmationView
-        #             )
-        #
-        # async def drawButtonCallback(interaction):
-        #     if await playerInputButtonsResponse(drawButton, interaction):
-        #         nonlocal command
-        #         command = 1
-        #         s = "Are you sure that you want to draw card(s)?"
-        #         await self.displayEmbed(makeConfirmationEmbed(s), confirmationView)
-        #
-        # async def quitButtonCallback(interaction):
-        #     if await playerInputButtonsResponse(quitButton, interaction):
-        #         nonlocal command
-        #         command = 2
-        #         s = "Are you sure that you want to quit the game?"
-        #         await self.displayEmbed(makeConfirmationEmbed(s), confirmationView)
-        #
-        # async def rejectButtonCallback(interaction):
-        #     if await confirmationButtonsResponse(rejectButton, interaction):
-        #         await resetButtonsAndAskAgain()
-        #
-        # async def confirmButtonCallback(interaction):
-        #     await confirmationButtonsResponse(confirmButton, interaction)
-        #
-        # playButton.callback = playButtonCallback
-        # drawButton.callback = drawButtonCallback
-        # quitButton.callback = quitButtonCallback
-        #
-        # rejectButton.callback = rejectButtonCallback
-        # confirmButton.callback = confirmButtonCallback
-        #
-        # await self.displayEmbed(embed = embedPlayerInput, view = playerInputView)
-        #
-        # # Only continue after the confirm button has been pressed
-        # def confirmButtonPressedCheck(interaction: discord.Interaction):
-        #     if interaction.user.id != player.name:
-        #         return False
-        #     try:
-        #         return interaction.data["custom_id"] == "confirmButton"
-        #     except KeyError:
-        #         return False
-        #
-        # await client.wait_for("interaction", check = confirmButtonPressedCheck)
-        #
-        # return PlayerMove(command), n
-        # try:
-        #     msg: str = await self.getInput(player)
-        #     command: int
-        #     n: int = 0
-        #     match msg:
-        #         case "!play":
-        #             s3 = "What card would you like to play? Respond with the "
-        #             s3 += "corresponding emoji."
-        #             await self.displayMessage(s3)
-        #             chosenCard: str = await self.getInput(player)
-        #             chosenColor, chosenValue = chosenCard[1:-1].split("_")
-        #             cardInHand: bool = False
-        #             for card in player.hand:
-        #                 if card.correctColorValue(chosenColor, chosenValue):
-        #                     cardInHand = True
-        #                     break
-        #                 n += 1
-        #             if not cardInHand:
-        #                 raise ValueError()
-        #             command = 0
-        #         case "!draw":
-        #             command = 1
-        #         case "!quit":
-        #             command = 2
-        #         case _:
-        #             raise ValueError()
-        #     return PlayerMove(command), n
-        # except:
-        #     raise UnoError("Invalid input given when selecting move.")
-
     async def getPlayerColorChoice(self, player: Player) -> Color:
         """Input for what color a player wants when they play a black card.
 
         HANDLES INVALID INPUT - DOES NOT THROW ERRORS."""
-        # s = f"<@{player.name}> what color would you like to choose? Enter the "
-        # s += "command for the color you would like to choose: `!red`, `!blue`,"
-        # s += " `!green`, or `!yellow`."
 
         c: Color = None
 
@@ -624,25 +440,6 @@ class DiscordBotIO(IO):
 
         return c
 
-        # while not c:
-        #     try:
-        #         await self.displayMessage(s)
-        #         colorChoice: str = await self.getInput(player)
-        #         match colorChoice:
-        #             case "!red":
-        #                 c = Color(0)
-        #             case "!blue":
-        #                 c = Color(1)
-        #             case "!green":
-        #                 c = Color(2)
-        #             case "!yellow":
-        #                 c = Color(3)
-        #             case _:
-        #                 raise ValueError()
-        #     except ValueError:
-        #         await self.displayMessage("Invalid input when selecting a color.")
-        # return c
-
     async def displayFirstValidDrawnCard(self, playerName, validCard, totalDrawn):
         embedDescription = "The following card is the first valid card in the "
         embedDescription += "deck, and it will be played for you:"
@@ -686,19 +483,6 @@ async def on_ready():
     currentGame = None
 
     print(f"Uno Bot has logged in.")
-
-
-# class customView(discord.ui.View):
-#     def __init__(self, user):
-#         self.user = user
-#         super().__init__()
-#
-#     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-#         if interaction.user != self.user:
-#             # TODO: remove this line
-#             await UNO_CHANNEL.send("You don't have permission to press this button")
-#             return False
-#         return True
 
 
 @client.event
@@ -828,27 +612,6 @@ async def self(interaction: discord.Interaction):
             await interaction.response.send_message(
                 embed = getDefaultErrorEmbed("There is already a game in progress.")
             )
-
-
-@tree.command(name = "stopgame", description = "Stops the current game of Uno.", guild = discord.Object(id = UNO_SERVER_ID))
-async def self(interaction: discord.Interaction):
-    global currentGame
-    if interaction.user.id == ADMIN_ID:
-        if currentGame:
-            currentGame = None
-            await interaction.response.send_message(
-                embed = getDefaultGameEmbed("Game has been stopped.")
-            )
-        else:
-            await interaction.response.send_message(
-                embed = getDefaultErrorEmbed("There is no active game."),
-                ephemeral = True
-            )
-    else:
-        await interaction.response.send_message(
-            embed = getDefaultErrorEmbed("You do not have permission to use this command."),
-            ephemeral = True
-        )
 
 
 @tree.command(name = "joinqueue", description = "Joins queue for Uno.", guild = discord.Object(id = UNO_SERVER_ID))
