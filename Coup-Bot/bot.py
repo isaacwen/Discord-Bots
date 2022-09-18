@@ -289,7 +289,7 @@ class CoupBotIO(IO):
             if await challengesButtonResponse(yesButton, interaction):
                 nonlocal challenger
                 challenger = interaction.user.id
-                self.releaseValidInputLock(f"Player {challenger.name} is challenging Player {curPlayer.name}.")
+                self.releaseValidInputLock(f"Player {challenger} is challenging Player {curPlayer.name}.")
 
         noButton.callback = noButtonCallback
         yesButton.callback = yesButtonCallback
@@ -724,27 +724,6 @@ async def self(interaction: discord.Interaction):
             await interaction.response.send_message(
                 embed = getDefaultErrorEmbed("There is already a game in progress.")
             )
-
-
-@tree.command(name = "stopgame", description = "Stops the current game of Coup.", guild = discord.Object(id = COUP_SERVER_ID))
-async def self(interaction: discord.Interaction):
-    global currentGame
-    if interaction.user.id == ADMIN_ID:
-        if currentGame:
-            currentGame = None
-            await interaction.response.send_message(
-                embed = getDefaultGameEmbed("Game has been stopped.")
-            )
-        else:
-            await interaction.response.send_message(
-                embed = getDefaultErrorEmbed("There is no active game."),
-                ephemeral = True
-            )
-    else:
-        await interaction.response.send_message(
-            embed = getDefaultErrorEmbed("You do not have permission to use this command."),
-            ephemeral = True
-        )
 
 
 @tree.command(name = "joinqueue", description = "Join queue for Coup.", guild = discord.Object(id = COUP_SERVER_ID))
